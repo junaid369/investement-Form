@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Investor History Form</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header class="form-header">
+      <h1>Investor Investment History Form</h1>
+      <p>Please fill in your investment details for verification purposes</p>
+    </header>
+
+    <form id="investorForm" enctype="multipart/form-data">
+      <!-- Progress Bar -->
+      <div class="progress-container">
+        <div class="progress-bar" id="progressBar"></div>
+        <span class="progress-text" id="progressText">Step 1 of 9</span>
+      </div>
+
+      <!-- Section 1: Personal Information -->
+      <div class="form-section active" data-section="1">
+        <h2 class="section-title">
+          <span class="section-number">1</span>
+          Personal / Company Information
+        </h2>
+
+        <div class="form-group">
+          <label for="fullName">Full Name / Company Name <span class="required">*</span></label>
+          <input type="text" id="fullName" name="fullName" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="email">Email Address <span class="required">*</span></label>
+            <input type="email" id="email" name="email" required>
+          </div>
+          <div class="form-group">
+            <label for="phone">Phone Number <span class="required">*</span></label>
+            <input type="tel" id="phone" name="phone" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="mobile">Mobile Number</label>
+            <input type="tel" id="mobile" name="mobile">
+          </div>
+          <div class="form-group">
+            <label for="country">Country <span class="required">*</span></label>
+            <select id="country" name="country" required>
+              <option value="">Select Country</option>
+              <option value="UAE">United Arab Emirates</option>
+              <option value="India">India</option>
+              <option value="UK">United Kingdom</option>
+              <option value="USA">United States</option>
+              <option value="Saudi Arabia">Saudi Arabia</option>
+              <option value="Qatar">Qatar</option>
+              <option value="Kuwait">Kuwait</option>
+              <option value="Bahrain">Bahrain</option>
+              <option value="Oman">Oman</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="address">Address <span class="required">*</span></label>
+          <textarea id="address" name="address" rows="3" required></textarea>
+        </div>
+
+        <div class="form-row three-col">
+          <div class="form-group">
+            <label for="city">City <span class="required">*</span></label>
+            <input type="text" id="city" name="city" required>
+          </div>
+          <div class="form-group">
+            <label for="state">State / Province</label>
+            <input type="text" id="state" name="state">
+          </div>
+          <div class="form-group">
+            <label for="pincode">Pincode / ZIP</label>
+            <input type="text" id="pincode" name="pincode">
+          </div>
+        </div>
+
+        <div class="nav-buttons">
+          <button type="button" class="btn btn-next" onclick="nextSection()">Next</button>
+        </div>
+      </div>
+
+      <!-- Section 2: Bank Details -->
+      <div class="form-section" data-section="2">
+        <h2 class="section-title">
+          <span class="section-number">2</span>
+          Bank Details
+        </h2>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="bankName">Bank Name <span class="required">*</span></label>
+            <input type="text" id="bankName" name="bankName" required>
+          </div>
+          <div class="form-group">
+            <label for="accountNumber">Account Number <span class="required">*</span></label>
+            <input type="text" id="accountNumber" name="accountNumber" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="accountHolderName">Account Holder Name <span class="required">*</span></label>
+            <input type="text" id="accountHolderName" name="accountHolderName" required>
+          </div>
+          <div class="form-group">
+            <label for="branchName">Branch Name</label>
+            <input type="text" id="branchName" name="branchName">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="iban">IBAN</label>
+          <input type="text" id="iban" name="iban">
+        </div>
+
+        <div class="nav-buttons">
+          <button type="button" class="btn btn-prev" onclick="prevSection()">Previous</button>
+          <button type="button" class="btn btn-next" onclick="nextSection()">Next</button>
+        </div>
+      </div>
+
+      <!-- Section 3: Investment History Details -->
+      <div class="form-section" data-section="3">
+        <h2 class="section-title">
+          <span class="section-number">3</span>
+          Investment History Details
+        </h2>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="totalInvestments">Total Number of Investments <span class="required">*</span></label>
+            <input type="number" id="totalInvestments" name="totalInvestments" min="1" required>
+          </div>
+          <div class="form-group">
+            <label for="totalAmount">Total Investment Amount (AED) <span class="required">*</span></label>
+            <input type="number" id="totalAmount" name="totalAmount" min="0" step="0.01" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="firstInvestmentDate">First Investment Date <span class="required">*</span></label>
+            <input type="date" id="firstInvestmentDate" name="firstInvestmentDate" required>
+          </div>
+          <div class="form-group">
+            <label for="latestInvestmentDate">Latest Investment Date</label>
+            <input type="date" id="latestInvestmentDate" name="latestInvestmentDate">
+          </div>
+        </div>
+
+        <div class="nav-buttons">
+          <button type="button" class="btn btn-prev" onclick="prevSection()">Previous</button>
+          <button type="button" class="btn btn-next" onclick="nextSection()">Next</button>
+        </div>
+      </div>
+
+      <!-- Section 4: Investment Records -->
+      <div class="form-section" data-section="4">
+        <h2 class="section-title">
+          <span class="section-number">4</span>
+          Investment Records
+        </h2>
+        <p class="section-hint">If you have multiple investments, you can submit multiple forms or list details in remarks section.</p>
+
+        <div class="form-group">
+          <label for="referenceNumber">Investment Reference Number (if known)</label>
+          <input type="text" id="referenceNumber" name="referenceNumber">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="investmentAmount">Investment Amount (AED) <span class="required">*</span></label>
+            <input type="number" id="investmentAmount" name="investmentAmount" min="0" step="0.01" required>
+          </div>
+          <div class="form-group">
+            <label for="investmentDate">Investment Date <span class="required">*</span></label>
+            <input type="date" id="investmentDate" name="investmentDate" required>
+          </div>
+        </div>
+
+        <div class="form-row three-col">
+          <div class="form-group">
+            <label for="duration">Duration (months) <span class="required">*</span></label>
+            <select id="duration" name="duration" required>
+              <option value="">Select Duration</option>
+              <option value="12">12 Months</option>
+              <option value="24">24 Months</option>
+              <option value="36">36 Months</option>
+              <option value="48">48 Months</option>
+              <option value="60">60 Months</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="dividendPercentage">Dividend (%) <span class="required">*</span></label>
+            <input type="number" id="dividendPercentage" name="dividendPercentage" min="0" max="100" step="0.01" required>
+          </div>
+          <div class="form-group">
+            <label for="dividendFrequency">Dividend Frequency <span class="required">*</span></label>
+            <select id="dividendFrequency" name="dividendFrequency" required>
+              <option value="">Select Frequency</option>
+              <option value="Monthly">Monthly</option>
+              <option value="Quarterly">Quarterly</option>
+              <option value="Yearly">Yearly</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="investmentStatus">Investment Status <span class="required">*</span></label>
+          <select id="investmentStatus" name="investmentStatus" required>
+            <option value="">Select Status</option>
+            <option value="Active">Active</option>
+            <option value="Completed">Completed</option>
+            <option value="Withdrawn">Withdrawn</option>
+          </select>
+        </div>
+
+        <div class="nav-buttons">
+          <button type="button" class="btn btn-prev" onclick="prevSection()">Previous</button>
+          <button type="button" class="btn btn-next" onclick="nextSection()">Next</button>
+        </div>
+      </div>
+
+      <!-- Section 5: Dividend History -->
+      <div class="form-section" data-section="5">
+        <h2 class="section-title">
+          <span class="section-number">5</span>
+          Dividend Payment History
+        </h2>
+
+        <div class="form-group">
+          <label for="totalDividendsReceived">Total Dividends Received (AED) <span class="required">*</span></label>
+          <input type="number" id="totalDividendsReceived" name="totalDividendsReceived" min="0" step="0.01" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="lastDividendDate">Last Dividend Received Date</label>
+            <input type="date" id="lastDividendDate" name="lastDividendDate">
+          </div>
+          <div class="form-group">
+            <label for="lastDividendAmount">Last Dividend Amount (AED)</label>
+            <input type="number" id="lastDividendAmount" name="lastDividendAmount" min="0" step="0.01">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Any Pending/Due Dividends? <span class="required">*</span></label>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input type="radio" name="hasPendingDividends" value="yes" required> Yes
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="hasPendingDividends" value="no"> No
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group" id="pendingAmountGroup" style="display: none;">
+          <label for="pendingDividendAmount">Pending Dividend Amount (AED)</label>
+          <input type="number" id="pendingDividendAmount" name="pendingDividendAmount" min="0" step="0.01">
+        </div>
+
+        <div class="nav-buttons">
+          <button type="button" class="btn btn-prev" onclick="prevSection()">Previous</button>
+          <button type="button" class="btn btn-next" onclick="nextSection()">Next</button>
+        </div>
+      </div>
+
+      <!-- Section 6: Payment Method -->
+      <div class="form-section" data-section="6">
+        <h2 class="section-title">
+          <span class="section-number">6</span>
+          Payment Method Used
+        </h2>
+
+        <div class="form-group">
+          <label for="paymentMethod">How did you pay? <span class="required">*</span></label>
+          <select id="paymentMethod" name="paymentMethod" required>
+            <option value="">Select Payment Method</option>
+            <option value="Bank Transfer">Bank Transfer</option>
+            <option value="Cheque">Cheque</option>
+            <option value="Cash">Cash</option>
+            <option value="Wire Transfer">Wire Transfer</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Did you pay by Cheque? <span class="required">*</span></label>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input type="radio" name="paidByCheque" value="yes" required> Yes
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="paidByCheque" value="no"> No
+            </label>
+          </div>
+        </div>
+
+        <div id="chequeDetails" style="display: none;">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="chequeNumber">Cheque Number</label>
+              <input type="text" id="chequeNumber" name="chequeNumber">
+            </div>
+            <div class="form-group">
+              <label for="chequeDate">Cheque Date</label>
+              <input type="date" id="chequeDate" name="chequeDate">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="chequeBankName">Cheque Bank Name</label>
+            <input type="text" id="chequeBankName" name="chequeBankName">
+          </div>
+        </div>
+
+        <div class="nav-buttons">
+          <button type="button" class="btn btn-prev" onclick="prevSection()">Previous</button>
+          <button type="button" class="btn btn-next" onclick="nextSection()">Next</button>
+        </div>
+      </div>
+
+      <!-- Section 7: Document Uploads -->
+      <div class="form-section" data-section="7">
+        <h2 class="section-title">
+          <span class="section-number">7</span>
+          Document Uploads
+        </h2>
+        <p class="section-hint">Upload supporting documents (PDF, JPG, PNG - Max 10MB each)</p>
+
+        <div class="form-group">
+          <label for="agreementCopy">Investment Agreement/Contract Copy <span class="required">*</span></label>
+          <input type="file" id="agreementCopy" name="agreementCopy" accept=".pdf,.jpg,.jpeg,.png" required>
+        </div>
+
+        <div class="form-group">
+          <label for="paymentProof">Payment Receipt/Proof <span class="required">*</span></label>
+          <input type="file" id="paymentProof" name="paymentProof" accept=".pdf,.jpg,.jpeg,.png" required>
+        </div>
+
+        <div class="form-group">
+          <label for="dividendReceipts">Dividend Payment Receipts</label>
+          <input type="file" id="dividendReceipts" name="dividendReceipts" accept=".pdf,.jpg,.jpeg,.png">
+        </div>
+
+        <div class="form-group">
+          <label for="otherDocuments">Any Other Related Documents</label>
+          <input type="file" id="otherDocuments" name="otherDocuments" accept=".pdf,.jpg,.jpeg,.png">
+        </div>
+
+        <div class="nav-buttons">
+          <button type="button" class="btn btn-prev" onclick="prevSection()">Previous</button>
+          <button type="button" class="btn btn-next" onclick="nextSection()">Next</button>
+        </div>
+      </div>
+
+      <!-- Section 8: Remarks -->
+      <div class="form-section" data-section="8">
+        <h2 class="section-title">
+          <span class="section-number">8</span>
+          Additional Remarks
+        </h2>
+
+        <div class="form-group">
+          <label for="discrepancies">Any discrepancies or issues to report?</label>
+          <textarea id="discrepancies" name="discrepancies" rows="3" placeholder="Describe any problems with payments, records, etc."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="additionalDetails">Additional Investment Details</label>
+          <textarea id="additionalDetails" name="additionalDetails" rows="3" placeholder="Any other information about your investments"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="contactPerson">Contact Person at MAG (if known)</label>
+          <input type="text" id="contactPerson" name="contactPerson" placeholder="Sales rep or employee name">
+        </div>
+
+        <div class="nav-buttons">
+          <button type="button" class="btn btn-prev" onclick="prevSection()">Previous</button>
+          <button type="button" class="btn btn-next" onclick="nextSection()">Next</button>
+        </div>
+      </div>
+
+      <!-- Section 9: Declaration -->
+      <div class="form-section" data-section="9">
+        <h2 class="section-title">
+          <span class="section-number">9</span>
+          Declaration
+        </h2>
+
+        <div class="declaration-box">
+          <div class="form-group checkbox-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="confirmAccuracy" name="confirmAccuracy" required>
+              <span>I confirm that all information provided in this form is accurate and complete to the best of my knowledge. <span class="required">*</span></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="signature">Digital Signature (Type your full name) <span class="required">*</span></label>
+          <input type="text" id="signature" name="signature" required placeholder="Type your full name as signature">
+        </div>
+
+        <div class="nav-buttons">
+          <button type="button" class="btn btn-prev" onclick="prevSection()">Previous</button>
+          <button type="submit" class="btn btn-submit" id="submitBtn">Submit Form</button>
+        </div>
+      </div>
+    </form>
+
+    <!-- Success Modal -->
+    <div class="modal" id="successModal">
+      <div class="modal-content">
+        <div class="modal-icon success">✓</div>
+        <h2>Form Submitted Successfully!</h2>
+        <p>Thank you for submitting your investment history details. Our team will review and verify the information.</p>
+        <button class="btn btn-primary" onclick="closeModal()">Close</button>
+      </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div class="modal" id="errorModal">
+      <div class="modal-content">
+        <div class="modal-icon error">✕</div>
+        <h2>Submission Failed</h2>
+        <p id="errorMessage">Something went wrong. Please try again.</p>
+        <button class="btn btn-primary" onclick="closeErrorModal()">Try Again</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
