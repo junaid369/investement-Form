@@ -1,5 +1,5 @@
 // API Base URL - Change this to your server URL
-const API_URL = "http://localhost:5050";
+const API_URL = "https://form.com";
 
 // Current section tracking
 let currentSection = 1;
