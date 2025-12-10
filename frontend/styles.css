@@ -26,22 +26,80 @@ body {
 .form-header {
   background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
   color: #D4AF37;
-  padding: 30px;
+  padding: 40px 30px;
   text-align: center;
   border-bottom: 2px solid #D4AF37;
 }
 
+.logo-container {
+  margin-bottom: 20px;
+}
+
+.header-logo {
+  max-width: 120px;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+}
+
 .form-header h1 {
-  font-size: 1.75rem;
+  font-size: 2rem;
   margin-bottom: 8px;
   font-weight: 700;
   color: #D4AF37;
   text-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 2px;
 }
 
-.form-header p {
-  font-size: 0.95rem;
+.header-subtitle {
+  font-size: 1.1rem;
+  color: #e0e0e0;
+  font-weight: 500;
+  margin-bottom: 5px;
+}
+
+.header-powered {
+  font-size: 0.9rem;
   color: #b8a361;
+  font-style: italic;
+  margin-bottom: 20px;
+}
+
+.header-description {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 20px;
+  background: rgba(212, 175, 55, 0.08);
+  border-radius: 10px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.header-description p {
+  font-size: 0.9rem;
+  color: #c0c0c0;
+  line-height: 1.7;
+  text-align: justify;
+}
+
+/* Footer */
+.form-footer {
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+  padding: 25px 30px;
+  text-align: center;
+  border-top: 2px solid #D4AF37;
+}
+
+.copyright {
+  font-size: 0.85rem;
+  color: #D4AF37;
+  margin-bottom: 5px;
+}
+
+.footer-brand {
+  font-size: 0.8rem;
+  color: #b8a361;
+  font-style: italic;
 }
 
 /* Progress Bar */
@@ -263,6 +321,42 @@ input[type="file"]:hover {
   border: 1px solid rgba(212, 175, 55, 0.2);
 }
 
+/* Court Agreement Number Example Image */
+.court-agreement-group {
+  margin-bottom: 25px;
+}
+
+.example-image-container {
+  margin-top: 15px;
+  padding: 15px;
+  background: rgba(212, 175, 55, 0.08);
+  border-radius: 10px;
+  border: 1px dashed rgba(212, 175, 55, 0.4);
+  text-align: center;
+}
+
+.example-label {
+  font-size: 0.85rem;
+  color: #D4AF37;
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.example-image {
+  max-width: 280px;
+  width: 100%;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(212, 175, 55, 0.3);
+}
+
+.example-hint {
+  font-size: 0.8rem;
+  color: #b8a361;
+  margin-top: 10px;
+  font-style: italic;
+}
+
 /* Navigation Buttons */
 .nav-buttons {
   display: flex;
@@ -421,11 +515,33 @@ input[type="file"]:hover {
   }
 
   .form-header {
-    padding: 25px 20px;
+    padding: 25px 15px;
   }
 
   .form-header h1 {
-    font-size: 1.4rem;
+    font-size: 1.5rem;
+    letter-spacing: 1px;
+  }
+
+  .header-subtitle {
+    font-size: 0.95rem;
+  }
+
+  .header-powered {
+    font-size: 0.8rem;
+  }
+
+  .header-description {
+    padding: 15px;
+  }
+
+  .header-description p {
+    font-size: 0.85rem;
+    text-align: left;
+  }
+
+  .header-logo {
+    max-width: 100px;
   }
 
   .form-section {
@@ -468,15 +584,49 @@ input[type="file"]:hover {
   .progress-bar {
     width: 100%;
   }
+
+  .form-footer {
+    padding: 20px 15px;
+  }
+
+  .copyright {
+    font-size: 0.75rem;
+  }
+
+  .footer-brand {
+    font-size: 0.7rem;
+  }
+
+  .example-image-container {
+    padding: 10px;
+  }
+
+  .example-image {
+    max-width: 220px;
+  }
 }
 
 @media (max-width: 480px) {
   .form-header h1 {
-    font-size: 1.2rem;
+    font-size: 1.25rem;
+    letter-spacing: 0.5px;
   }
 
-  .form-header p {
+  .header-subtitle {
     font-size: 0.85rem;
+  }
+
+  .header-powered {
+    font-size: 0.75rem;
+  }
+
+  .header-description p {
+    font-size: 0.8rem;
+    line-height: 1.6;
+  }
+
+  .header-logo {
+    max-width: 80px;
   }
 
   .radio-group {
@@ -486,6 +636,28 @@ input[type="file"]:hover {
 
   .modal-content {
     padding: 30px 20px;
+  }
+
+  .section-number {
+    width: 28px;
+    height: 28px;
+    font-size: 0.8rem;
+  }
+
+  .section-title {
+    font-size: 1rem;
+  }
+
+  .example-image {
+    max-width: 180px;
+  }
+
+  .example-label {
+    font-size: 0.75rem;
+  }
+
+  .example-hint {
+    font-size: 0.7rem;
   }
 }
 

@@ -161,6 +161,7 @@ function setupFormSubmission() {
 // Collect Form Data
 function collectFormData() {
   return {
+    courtAgreementNumber: document.getElementById("courtAgreementNumber").value,
     personalInfo: {
       fullName: document.getElementById("fullName").value,
       email: document.getElementById("email").value,

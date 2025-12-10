@@ -9,8 +9,15 @@
 <body>
   <div class="container">
     <header class="form-header">
-      <h1>Investor Investment History Form</h1>
-      <p>Please fill in your investment details for verification purposes</p>
+      <div class="logo-container">
+        <img src="logo.avif" alt="Matajar Group Logo" class="header-logo" id="headerLogo">
+      </div>
+      <h1>Matajar Group</h1>
+      <h2 class="header-subtitle">Legal Review & Settlement Processing Division</h2>
+      <p class="header-powered">Powered by Mirage by MAG Investment LLC</p>
+      <div class="header-description">
+        <p>As part of the final legal and audit process, all investors are required to verify their investment details and submit supporting documents. This information will be reviewed by our legal and audit teams and is essential for preparing your settlement file and generating your investor login (username & password). Please complete the form accurately to avoid delays.</p>
+      </div>
     </header>
 
     <form id="investorForm" enctype="multipart/form-data">
@@ -173,6 +180,17 @@
           Investment Records
         </h2>
         <p class="section-hint">If you have multiple investments, you can submit multiple forms or list details in remarks section.</p>
+
+        <!-- Court Agreement Number Field -->
+        <div class="form-group court-agreement-group">
+          <label for="courtAgreementNumber">Court Agreement Number <span class="required">*</span></label>
+          <input type="text" id="courtAgreementNumber" name="courtAgreementNumber" required placeholder="e.g., SN2025/0000440833">
+          <div class="example-image-container">
+            <p class="example-label">Example: Find your agreement number as shown below</p>
+            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='180' viewBox='0 0 280 180'%3E%3Crect fill='%23fff' width='280' height='180'/%3E%3Crect fill='%23c8102e' y='130' width='280' height='25'/%3E%3Crect fill='%23f5f5f5' y='155' width='280' height='25'/%3E%3Ctext x='140' y='20' text-anchor='middle' font-size='10' fill='%23333'%3EGovernment of Dubai%3C/text%3E%3Crect x='90' y='40' width='100' height='50' fill='%23000'/%3E%3Ctext x='140' y='110' text-anchor='middle' font-size='12' font-weight='bold' fill='%23333'%3ESN2025/0000440833%3C/text%3E%3Ctext x='140' y='147' text-anchor='middle' font-size='9' fill='%23fff'%3Eالصفة القانونية%3C/text%3E%3C/svg%3E" alt="Court Agreement Number Example" class="example-image">
+            <p class="example-hint">The number appears below the barcode on your court document</p>
+          </div>
+        </div>
 
         <div class="form-group">
           <label for="referenceNumber">Investment Reference Number (if known)</label>
@@ -442,6 +460,12 @@
         <button class="btn btn-primary" onclick="closeErrorModal()">Try Again</button>
       </div>
     </div>
+
+    <!-- Footer -->
+    <footer class="form-footer">
+      <p class="copyright">&copy; Copyright 2025 Matajar Group - All Rights Reserved.</p>
+      <p class="footer-brand">Mirage by MAG Investments LLC</p>
+    </footer>
   </div>
 
   <script src="script.js"></script>

@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const multer = require("multer");
 const path = require("path");
-const fs = require("fs");
+const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 require("dotenv").config();
 
 const app = express();
@@ -13,25 +13,20 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Create uploads directory if not exists
-const uploadsDir = path.join(__dirname, "uploads");
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-// Serve uploaded files
-app.use("/uploads", express.static(uploadsDir));
-
-// Multer config for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + "-" + file.originalname);
+// AWS S3 Configuration
+const s3Client = new S3Client({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   },
 });
+
+const BUCKET_NAME = process.env.AWS_S3_BUCKET_NAME;
+const CLOUDFRONT_URL = process.env.CLOUDFRONT_URL;
+
+// Multer config for memory storage (for S3 upload)
+const storage = multer.memoryStorage();
 
 const upload = multer({
   storage: storage,
@@ -40,12 +35,30 @@ const upload = multer({
     const allowedTypes = /jpeg|jpg|png|pdf|doc|docx/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = allowedTypes.test(file.mimetype);
-    if (extname && mimetype) {
+    if (extname || mimetype) {
       return cb(null, true);
     }
     cb(new Error("Only images (jpg, png) and documents (pdf, doc) are allowed"));
   },
 });
+
+// Upload file to S3
+async function uploadToS3(file, folder = "investor-forms") {
+  const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+  const fileName = `${folder}/${uniqueSuffix}-${file.originalname}`;
+
+  const params = {
+    Bucket: BUCKET_NAME,
+    Key: fileName,
+    Body: file.buffer,
+    ContentType: file.mimetype,
+  };
+
+  await s3Client.send(new PutObjectCommand(params));
+
+  // Return CloudFront URL
+  return `${CLOUDFRONT_URL}/${fileName}`;
+}
 
 // MongoDB Connection
 mongoose
@@ -56,6 +69,9 @@ mongoose
 // Investor Form Schema
 const investorFormSchema = new mongoose.Schema(
   {
+    // Court Agreement Number
+    courtAgreementNumber: { type: String, required: true },
+
     // Section 1: Personal Information
     personalInfo: {
       fullName: { type: String, required: true },
@@ -115,7 +131,7 @@ const investorFormSchema = new mongoose.Schema(
       chequeBankName: { type: String },
     },
 
-    // Section 7: Documents
+    // Section 7: Documents (now S3 URLs)
     documents: {
       agreementCopy: { type: String },
       paymentProof: { type: String },
@@ -149,10 +165,10 @@ const InvestorForm = mongoose.model("InvestorForm", investorFormSchema);
 
 // Health check
 app.get("/", (req, res) => {
-  res.json({ message: "Investor Form API is running!" });
+  res.json({ message: "Investor Form API is running!", storage: "AWS S3" });
 });
 
-// Submit form with file uploads
+// Submit form with file uploads to S3
 app.post(
   "/api/submit",
   upload.fields([
@@ -165,15 +181,25 @@ app.post(
     try {
       const formData = JSON.parse(req.body.formData);
 
-      // Add file paths to documents
+      // Upload files to S3 and get URLs
+      const documents = {};
+
       if (req.files) {
-        formData.documents = {
-          agreementCopy: req.files.agreementCopy ? `/uploads/${req.files.agreementCopy[0].filename}` : null,
-          paymentProof: req.files.paymentProof ? `/uploads/${req.files.paymentProof[0].filename}` : null,
-          dividendReceipts: req.files.dividendReceipts ? `/uploads/${req.files.dividendReceipts[0].filename}` : null,
-          otherDocuments: req.files.otherDocuments ? `/uploads/${req.files.otherDocuments[0].filename}` : null,
-        };
+        if (req.files.agreementCopy) {
+          documents.agreementCopy = await uploadToS3(req.files.agreementCopy[0]);
+        }
+        if (req.files.paymentProof) {
+          documents.paymentProof = await uploadToS3(req.files.paymentProof[0]);
+        }
+        if (req.files.dividendReceipts) {
+          documents.dividendReceipts = await uploadToS3(req.files.dividendReceipts[0]);
+        }
+        if (req.files.otherDocuments) {
+          documents.otherDocuments = await uploadToS3(req.files.otherDocuments[0]);
+        }
       }
+
+      formData.documents = documents;
 
       const newForm = new InvestorForm(formData);
       await newForm.save();
@@ -238,4 +264,5 @@ app.patch("/api/submissions/:id/status", async (req, res) => {
 const PORT = process.env.PORT || 5050;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Files will be stored in S3 bucket: ${BUCKET_NAME}`);
 });
