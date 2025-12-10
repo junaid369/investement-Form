@@ -1,5 +1,5 @@
 // API Base URL - Change this to your server URL
-const API_URL = "https://form.com";
+const API_URL = "https://investmentapis.dailyneeds.ai";
 
 // Current section tracking
 let currentSection = 1;
