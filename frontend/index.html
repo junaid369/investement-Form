@@ -24,7 +24,7 @@
       <!-- Progress Bar -->
       <div class="progress-container">
         <div class="progress-bar" id="progressBar"></div>
-        <span class="progress-text" id="progressText">Step 1 of 9</span>
+        <span class="progress-text" id="progressText">Step 1 of 7</span>
       </div>
 
       <!-- Section 1: Personal Information -->
@@ -39,38 +39,81 @@
           <input type="text" id="fullName" name="fullName" required>
         </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label for="email">Email Address <span class="required">*</span></label>
-            <input type="email" id="email" name="email" required>
-          </div>
-          <div class="form-group">
-            <label for="phone">Phone Number <span class="required">*</span></label>
-            <input type="tel" id="phone" name="phone" required>
-          </div>
+        <div class="form-group">
+          <label for="email">Email Address <span class="required">*</span></label>
+          <input type="email" id="email" name="email" required>
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label for="mobile">Mobile Number</label>
-            <input type="tel" id="mobile" name="mobile">
+            <label for="phone">Phone Number <span class="required">*</span></label>
+            <div class="phone-input-group">
+              <select id="phoneCode" name="phoneCode" class="country-code-select">
+                <option value="+971">+971 (UAE)</option>
+                <option value="+91">+91 (India)</option>
+                <option value="+44">+44 (UK)</option>
+                <option value="+1">+1 (USA)</option>
+                <option value="+966">+966 (Saudi)</option>
+                <option value="+974">+974 (Qatar)</option>
+                <option value="+965">+965 (Kuwait)</option>
+                <option value="+973">+973 (Bahrain)</option>
+                <option value="+968">+968 (Oman)</option>
+                <option value="+92">+92 (Pakistan)</option>
+                <option value="+880">+880 (Bangladesh)</option>
+                <option value="+63">+63 (Philippines)</option>
+                <option value="+20">+20 (Egypt)</option>
+                <option value="+962">+962 (Jordan)</option>
+                <option value="+961">+961 (Lebanon)</option>
+              </select>
+              <input type="tel" id="phone" name="phone" required placeholder="Enter phone number">
+            </div>
           </div>
           <div class="form-group">
-            <label for="country">Country <span class="required">*</span></label>
-            <select id="country" name="country" required>
-              <option value="">Select Country</option>
-              <option value="UAE">United Arab Emirates</option>
-              <option value="India">India</option>
-              <option value="UK">United Kingdom</option>
-              <option value="USA">United States</option>
-              <option value="Saudi Arabia">Saudi Arabia</option>
-              <option value="Qatar">Qatar</option>
-              <option value="Kuwait">Kuwait</option>
-              <option value="Bahrain">Bahrain</option>
-              <option value="Oman">Oman</option>
-              <option value="Other">Other</option>
-            </select>
+            <label for="mobile">Mobile Number</label>
+            <div class="phone-input-group">
+              <select id="mobileCode" name="mobileCode" class="country-code-select">
+                <option value="+971">+971 (UAE)</option>
+                <option value="+91">+91 (India)</option>
+                <option value="+44">+44 (UK)</option>
+                <option value="+1">+1 (USA)</option>
+                <option value="+966">+966 (Saudi)</option>
+                <option value="+974">+974 (Qatar)</option>
+                <option value="+965">+965 (Kuwait)</option>
+                <option value="+973">+973 (Bahrain)</option>
+                <option value="+968">+968 (Oman)</option>
+                <option value="+92">+92 (Pakistan)</option>
+                <option value="+880">+880 (Bangladesh)</option>
+                <option value="+63">+63 (Philippines)</option>
+                <option value="+20">+20 (Egypt)</option>
+                <option value="+962">+962 (Jordan)</option>
+                <option value="+961">+961 (Lebanon)</option>
+              </select>
+              <input type="tel" id="mobile" name="mobile" placeholder="Enter mobile number">
+            </div>
           </div>
+        </div>
+
+        <div class="form-group">
+          <label for="country">Country <span class="required">*</span></label>
+          <select id="country" name="country" required>
+            <option value="">Select Country</option>
+            <option value="UAE">United Arab Emirates</option>
+            <option value="India">India</option>
+            <option value="UK">United Kingdom</option>
+            <option value="USA">United States</option>
+            <option value="Saudi Arabia">Saudi Arabia</option>
+            <option value="Qatar">Qatar</option>
+            <option value="Kuwait">Kuwait</option>
+            <option value="Bahrain">Bahrain</option>
+            <option value="Oman">Oman</option>
+            <option value="Pakistan">Pakistan</option>
+            <option value="Bangladesh">Bangladesh</option>
+            <option value="Philippines">Philippines</option>
+            <option value="Egypt">Egypt</option>
+            <option value="Jordan">Jordan</option>
+            <option value="Lebanon">Lebanon</option>
+            <option value="Other">Other</option>
+          </select>
         </div>
 
         <div class="form-group">
@@ -138,48 +181,13 @@
         </div>
       </div>
 
-      <!-- Section 3: Investment History Details -->
+      <!-- Section 3: Investment Details (Combined with Payment Method) -->
       <div class="form-section" data-section="3">
         <h2 class="section-title">
           <span class="section-number">3</span>
-          Investment History Details
+          Investment Details
         </h2>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="totalInvestments">Total Number of Investments <span class="required">*</span></label>
-            <input type="number" id="totalInvestments" name="totalInvestments" min="1" required>
-          </div>
-          <div class="form-group">
-            <label for="totalAmount">Total Investment Amount (AED) <span class="required">*</span></label>
-            <input type="number" id="totalAmount" name="totalAmount" min="0" step="0.01" required>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="firstInvestmentDate">First Investment Date <span class="required">*</span></label>
-            <input type="date" id="firstInvestmentDate" name="firstInvestmentDate" required>
-          </div>
-          <div class="form-group">
-            <label for="latestInvestmentDate">Latest Investment Date</label>
-            <input type="date" id="latestInvestmentDate" name="latestInvestmentDate">
-          </div>
-        </div>
-
-        <div class="nav-buttons">
-          <button type="button" class="btn btn-prev" onclick="prevSection()">Previous</button>
-          <button type="button" class="btn btn-next" onclick="nextSection()">Next</button>
-        </div>
-      </div>
-
-      <!-- Section 4: Investment Records -->
-      <div class="form-section" data-section="4">
-        <h2 class="section-title">
-          <span class="section-number">4</span>
-          Investment Records
-        </h2>
-        <p class="section-hint">If you have multiple investments, you can submit multiple forms or list details in remarks section.</p>
+        <p class="section-hint">If you have multiple investments, please submit a separate form for each investment.</p>
 
         <!-- Court Agreement Number Field -->
         <div class="form-group court-agreement-group">
@@ -222,8 +230,8 @@
             </select>
           </div>
           <div class="form-group">
-            <label for="dividendPercentage">Dividend (%) <span class="required">*</span></label>
-            <input type="number" id="dividendPercentage" name="dividendPercentage" min="0" max="100" step="0.01" required>
+            <label for="annualDividendPercentage">Annual Dividend (%) <span class="required">*</span></label>
+            <input type="number" id="annualDividendPercentage" name="annualDividendPercentage" min="0" max="100" step="0.01" required>
           </div>
           <div class="form-group">
             <label for="dividendFrequency">Dividend Frequency <span class="required">*</span></label>
@@ -246,67 +254,13 @@
           </select>
         </div>
 
-        <div class="nav-buttons">
-          <button type="button" class="btn btn-prev" onclick="prevSection()">Previous</button>
-          <button type="button" class="btn btn-next" onclick="nextSection()">Next</button>
-        </div>
-      </div>
-
-      <!-- Section 5: Dividend History -->
-      <div class="form-section" data-section="5">
-        <h2 class="section-title">
-          <span class="section-number">5</span>
-          Dividend Payment History
-        </h2>
-
-        <div class="form-group">
-          <label for="totalDividendsReceived">Total Dividends Received (AED) <span class="required">*</span></label>
-          <input type="number" id="totalDividendsReceived" name="totalDividendsReceived" min="0" step="0.01" required>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="lastDividendDate">Last Dividend Received Date</label>
-            <input type="date" id="lastDividendDate" name="lastDividendDate">
-          </div>
-          <div class="form-group">
-            <label for="lastDividendAmount">Last Dividend Amount (AED)</label>
-            <input type="number" id="lastDividendAmount" name="lastDividendAmount" min="0" step="0.01">
-          </div>
+        <!-- Payment Method Section (moved here) -->
+        <div class="subsection-divider">
+          <span>Payment Information</span>
         </div>
 
         <div class="form-group">
-          <label>Any Pending/Due Dividends? <span class="required">*</span></label>
-          <div class="radio-group">
-            <label class="radio-label">
-              <input type="radio" name="hasPendingDividends" value="yes" required> Yes
-            </label>
-            <label class="radio-label">
-              <input type="radio" name="hasPendingDividends" value="no"> No
-            </label>
-          </div>
-        </div>
-
-        <div class="form-group" id="pendingAmountGroup" style="display: none;">
-          <label for="pendingDividendAmount">Pending Dividend Amount (AED)</label>
-          <input type="number" id="pendingDividendAmount" name="pendingDividendAmount" min="0" step="0.01">
-        </div>
-
-        <div class="nav-buttons">
-          <button type="button" class="btn btn-prev" onclick="prevSection()">Previous</button>
-          <button type="button" class="btn btn-next" onclick="nextSection()">Next</button>
-        </div>
-      </div>
-
-      <!-- Section 6: Payment Method -->
-      <div class="form-section" data-section="6">
-        <h2 class="section-title">
-          <span class="section-number">6</span>
-          Payment Method Used
-        </h2>
-
-        <div class="form-group">
-          <label for="paymentMethod">How did you pay? <span class="required">*</span></label>
+          <label for="paymentMethod">Payment Method <span class="required">*</span></label>
           <select id="paymentMethod" name="paymentMethod" required>
             <option value="">Select Payment Method</option>
             <option value="Bank Transfer">Bank Transfer</option>
@@ -351,10 +305,56 @@
         </div>
       </div>
 
-      <!-- Section 7: Document Uploads -->
-      <div class="form-section" data-section="7">
+      <!-- Section 4: Dividend History -->
+      <div class="form-section" data-section="4">
         <h2 class="section-title">
-          <span class="section-number">7</span>
+          <span class="section-number">4</span>
+          Dividend Payment History
+        </h2>
+
+        <div class="form-group">
+          <label for="totalDividendsReceived">Total Dividends Received (AED) <span class="required">*</span></label>
+          <input type="number" id="totalDividendsReceived" name="totalDividendsReceived" min="0" step="0.01" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="lastDividendDate">Last Dividend Received Date</label>
+            <input type="date" id="lastDividendDate" name="lastDividendDate">
+          </div>
+          <div class="form-group">
+            <label for="lastDividendAmount">Last Dividend Amount (AED)</label>
+            <input type="number" id="lastDividendAmount" name="lastDividendAmount" min="0" step="0.01">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Any Pending/Due Dividends? <span class="required">*</span></label>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input type="radio" name="hasPendingDividends" value="yes" required> Yes
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="hasPendingDividends" value="no"> No
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group" id="pendingAmountGroup" style="display: none;">
+          <label for="pendingDividendAmount">Pending Dividend Amount (AED)</label>
+          <input type="number" id="pendingDividendAmount" name="pendingDividendAmount" min="0" step="0.01">
+        </div>
+
+        <div class="nav-buttons">
+          <button type="button" class="btn btn-prev" onclick="prevSection()">Previous</button>
+          <button type="button" class="btn btn-next" onclick="nextSection()">Next</button>
+        </div>
+      </div>
+
+      <!-- Section 5: Document Uploads -->
+      <div class="form-section" data-section="5">
+        <h2 class="section-title">
+          <span class="section-number">5</span>
           Document Uploads
         </h2>
         <p class="section-hint">Upload supporting documents (PDF, JPG, PNG - Max 10MB each)</p>
@@ -385,10 +385,10 @@
         </div>
       </div>
 
-      <!-- Section 8: Remarks -->
-      <div class="form-section" data-section="8">
+      <!-- Section 6: Remarks -->
+      <div class="form-section" data-section="6">
         <h2 class="section-title">
-          <span class="section-number">8</span>
+          <span class="section-number">6</span>
           Additional Remarks
         </h2>
 
@@ -413,10 +413,10 @@
         </div>
       </div>
 
-      <!-- Section 9: Declaration -->
-      <div class="form-section" data-section="9">
+      <!-- Section 7: Declaration -->
+      <div class="form-section" data-section="7">
         <h2 class="section-title">
-          <span class="section-number">9</span>
+          <span class="section-number">7</span>
           Declaration
         </h2>
 

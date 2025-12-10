@@ -66,7 +66,7 @@ mongoose
   .then(() => console.log("MongoDB Connected"))
   .catch((err) => console.error("MongoDB Connection Error:", err));
 
-// Investor Form Schema
+// Investor Form Schema - Updated Structure
 const investorFormSchema = new mongoose.Schema(
   {
     // Court Agreement Number
@@ -77,7 +77,9 @@ const investorFormSchema = new mongoose.Schema(
       fullName: { type: String, required: true },
       email: { type: String, required: true },
       phone: { type: String, required: true },
+      phoneCode: { type: String },
       mobile: { type: String },
+      mobileCode: { type: String },
       country: { type: String, required: true },
       address: { type: String, required: true },
       city: { type: String, required: true },
@@ -94,35 +96,18 @@ const investorFormSchema = new mongoose.Schema(
       iban: { type: String },
     },
 
-    // Section 3: Investment History
-    investmentHistory: {
-      totalInvestments: { type: Number, required: true },
-      totalAmount: { type: Number, required: true },
-      firstInvestmentDate: { type: Date, required: true },
-      latestInvestmentDate: { type: Date },
-    },
-
-    // Section 4: Investment Records
-    investmentRecords: {
+    // Section 3: Investment Details (Combined - replaces investmentHistory and investmentRecords)
+    investmentDetails: {
       referenceNumber: { type: String },
       amount: { type: Number, required: true },
       investmentDate: { type: Date, required: true },
       duration: { type: String, required: true },
-      dividendPercentage: { type: Number, required: true },
+      annualDividendPercentage: { type: Number, required: true },
       dividendFrequency: { type: String, required: true },
       status: { type: String, required: true },
     },
 
-    // Section 5: Dividend History
-    dividendHistory: {
-      totalReceived: { type: Number, required: true },
-      lastReceivedDate: { type: Date },
-      lastAmount: { type: Number },
-      hasPending: { type: Boolean, required: true },
-      pendingAmount: { type: Number },
-    },
-
-    // Section 6: Payment Method
+    // Payment Method (now part of investment section in frontend)
     paymentMethod: {
       method: { type: String, required: true },
       paidByCheque: { type: Boolean, required: true },
@@ -131,7 +116,16 @@ const investorFormSchema = new mongoose.Schema(
       chequeBankName: { type: String },
     },
 
-    // Section 7: Documents (now S3 URLs)
+    // Section 4: Dividend History
+    dividendHistory: {
+      totalReceived: { type: Number, required: true },
+      lastReceivedDate: { type: Date },
+      lastAmount: { type: Number },
+      hasPending: { type: Boolean, required: true },
+      pendingAmount: { type: Number },
+    },
+
+    // Section 5: Documents (S3 URLs)
     documents: {
       agreementCopy: { type: String },
       paymentProof: { type: String },
@@ -139,14 +133,14 @@ const investorFormSchema = new mongoose.Schema(
       otherDocuments: { type: String },
     },
 
-    // Section 8: Remarks
+    // Section 6: Remarks
     remarks: {
       discrepancies: { type: String },
       additionalDetails: { type: String },
       contactPerson: { type: String },
     },
 
-    // Section 9: Declaration
+    // Section 7: Declaration
     declaration: {
       confirmed: { type: Boolean, required: true },
       signature: { type: String, required: true },
@@ -245,6 +239,7 @@ app.get("/api/submissions", async (req, res) => {
         { "personalInfo.email": { $regex: search, $options: "i" } },
         { "personalInfo.phone": { $regex: search, $options: "i" } },
         { courtAgreementNumber: { $regex: search, $options: "i" } },
+        { "investmentDetails.referenceNumber": { $regex: search, $options: "i" } },
       ];
     }
 

@@ -321,6 +321,44 @@ input[type="file"]:hover {
   border: 1px solid rgba(212, 175, 55, 0.2);
 }
 
+/* Phone Input Group with Country Code */
+.phone-input-group {
+  display: flex;
+  gap: 8px;
+}
+
+.country-code-select {
+  width: 140px;
+  flex-shrink: 0;
+}
+
+.phone-input-group input {
+  flex: 1;
+}
+
+/* Subsection Divider */
+.subsection-divider {
+  display: flex;
+  align-items: center;
+  margin: 25px 0 20px;
+  gap: 15px;
+}
+
+.subsection-divider::before,
+.subsection-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.4), transparent);
+}
+
+.subsection-divider span {
+  color: #D4AF37;
+  font-size: 0.95rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 /* Court Agreement Number Example Image */
 .court-agreement-group {
   margin-bottom: 25px;

@@ -3,7 +3,7 @@ const API_URL = "https://investmentapis.dailyneeds.ai";
 
 // Current section tracking
 let currentSection = 1;
-const totalSections = 9;
+const totalSections = 7;
 
 // Initialize
 document.addEventListener("DOMContentLoaded", () => {
@@ -160,13 +160,20 @@ function setupFormSubmission() {
 
 // Collect Form Data
 function collectFormData() {
+  const phoneCode = document.getElementById("phoneCode").value;
+  const phone = document.getElementById("phone").value;
+  const mobileCode = document.getElementById("mobileCode").value;
+  const mobile = document.getElementById("mobile").value;
+
   return {
     courtAgreementNumber: document.getElementById("courtAgreementNumber").value,
     personalInfo: {
       fullName: document.getElementById("fullName").value,
       email: document.getElementById("email").value,
-      phone: document.getElementById("phone").value,
-      mobile: document.getElementById("mobile").value,
+      phone: phoneCode + phone,
+      phoneCode: phoneCode,
+      mobile: mobile ? mobileCode + mobile : null,
+      mobileCode: mobileCode,
       country: document.getElementById("country").value,
       address: document.getElementById("address").value,
       city: document.getElementById("city").value,
@@ -180,27 +187,14 @@ function collectFormData() {
       branchName: document.getElementById("branchName").value,
       iban: document.getElementById("iban").value,
     },
-    investmentHistory: {
-      totalInvestments: parseInt(document.getElementById("totalInvestments").value) || 0,
-      totalAmount: parseFloat(document.getElementById("totalAmount").value) || 0,
-      firstInvestmentDate: document.getElementById("firstInvestmentDate").value,
-      latestInvestmentDate: document.getElementById("latestInvestmentDate").value || null,
-    },
-    investmentRecords: {
+    investmentDetails: {
       referenceNumber: document.getElementById("referenceNumber").value,
       amount: parseFloat(document.getElementById("investmentAmount").value) || 0,
       investmentDate: document.getElementById("investmentDate").value,
       duration: document.getElementById("duration").value,
-      dividendPercentage: parseFloat(document.getElementById("dividendPercentage").value) || 0,
+      annualDividendPercentage: parseFloat(document.getElementById("annualDividendPercentage").value) || 0,
       dividendFrequency: document.getElementById("dividendFrequency").value,
       status: document.getElementById("investmentStatus").value,
-    },
-    dividendHistory: {
-      totalReceived: parseFloat(document.getElementById("totalDividendsReceived").value) || 0,
-      lastReceivedDate: document.getElementById("lastDividendDate").value || null,
-      lastAmount: parseFloat(document.getElementById("lastDividendAmount").value) || null,
-      hasPending: document.querySelector('input[name="hasPendingDividends"]:checked')?.value === "yes",
-      pendingAmount: parseFloat(document.getElementById("pendingDividendAmount").value) || null,
     },
     paymentMethod: {
       method: document.getElementById("paymentMethod").value,
@@ -208,6 +202,13 @@ function collectFormData() {
       chequeNumber: document.getElementById("chequeNumber").value || null,
       chequeDate: document.getElementById("chequeDate").value || null,
       chequeBankName: document.getElementById("chequeBankName").value || null,
+    },
+    dividendHistory: {
+      totalReceived: parseFloat(document.getElementById("totalDividendsReceived").value) || 0,
+      lastReceivedDate: document.getElementById("lastDividendDate").value || null,
+      lastAmount: parseFloat(document.getElementById("lastDividendAmount").value) || null,
+      hasPending: document.querySelector('input[name="hasPendingDividends"]:checked')?.value === "yes",
+      pendingAmount: parseFloat(document.getElementById("pendingDividendAmount").value) || null,
     },
     remarks: {
       discrepancies: document.getElementById("discrepancies").value,
