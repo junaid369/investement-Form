@@ -219,11 +219,66 @@ app.post(
   }
 );
 
-// Get all submissions
+// Get all submissions with pagination and search
 app.get("/api/submissions", async (req, res) => {
   try {
-    const submissions = await InvestorForm.find().sort({ createdAt: -1 });
-    res.json({ success: true, data: submissions });
+    const {
+      page = 1,
+      limit = 50,
+      search = "",
+      status = "",
+      sortBy = "createdAt",
+      sortOrder = "desc",
+    } = req.query;
+
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
+
+    // Build query
+    let query = {};
+
+    // Search filter
+    if (search) {
+      query.$or = [
+        { "personalInfo.fullName": { $regex: search, $options: "i" } },
+        { "personalInfo.email": { $regex: search, $options: "i" } },
+        { "personalInfo.phone": { $regex: search, $options: "i" } },
+        { courtAgreementNumber: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    // Status filter
+    if (status && status !== "all") {
+      query.status = status;
+    }
+
+    // Sort
+    const sortOptions = {};
+    sortOptions[sortBy] = sortOrder === "asc" ? 1 : -1;
+
+    // Get total count
+    const totalCount = await InvestorForm.countDocuments(query);
+    const totalPages = Math.ceil(totalCount / limitNum);
+
+    // Get paginated data
+    const submissions = await InvestorForm.find(query)
+      .sort(sortOptions)
+      .skip(skip)
+      .limit(limitNum);
+
+    res.json({
+      success: true,
+      data: submissions,
+      pagination: {
+        currentPage: pageNum,
+        totalPages,
+        totalCount,
+        limit: limitNum,
+        hasNext: pageNum < totalPages,
+        hasPrev: pageNum > 1,
+      },
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
