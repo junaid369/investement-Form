@@ -628,9 +628,11 @@ app.post("/api/user/submissions/draft", authenticateToken, async (req, res) => {
     const formData = req.body;
     formData.status = "draft";
     formData.userId = req.user.userId; // Link draft to authenticated user
+    console.log("Saving draft with userId:", req.user.userId);
 
     const newForm = new InvestorForm(formData);
     await newForm.save();
+    console.log("Draft saved with _id:", newForm._id, "userId:", newForm.userId);
 
     res.json({ success: true, message: "Draft saved", submission: newForm });
   } catch (error) {
@@ -651,11 +653,13 @@ app.put("/api/user/submissions/draft/:id", authenticateToken, async (req, res) =
       return res.status(400).json({ success: false, message: "Cannot edit verified submissions" });
     }
 
+    console.log("Updating draft", req.params.id, "with userId:", req.user.userId);
     const updatedSubmission = await InvestorForm.findByIdAndUpdate(
       req.params.id,
       { ...req.body, status: "draft", userId: req.user.userId },
       { new: true }
     );
+    console.log("Draft updated, userId:", updatedSubmission.userId);
 
     res.json({ success: true, message: "Draft updated", submission: updatedSubmission });
   } catch (error) {
@@ -677,6 +681,7 @@ app.post(
     try {
       const formData = JSON.parse(req.body.formData);
       formData.userId = req.user.userId; // Link submission to authenticated user
+      console.log("Submitting form with userId:", req.user.userId, "existing _id:", formData._id);
 
       // Upload files to S3 and get URLs
       const documents = {};

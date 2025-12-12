@@ -1033,12 +1033,11 @@ const InvestmentForm = () => {
 
               <div className="form-row single">
                 <div className={`form-group ${errors['declaration.confirmed'] ? 'error' : ''}`}>
-                  <label style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', cursor: 'pointer' }}>
+                  <label className="declaration-label">
                     <input
                       type="checkbox"
                       checked={formData.declaration.confirmed}
                       onChange={(e) => handleChange('declaration', 'confirmed', e.target.checked)}
-                      style={{ marginTop: '5px' }}
                     />
                     <span>
                       I hereby declare that all the information provided above is true and accurate to the best of my knowledge.

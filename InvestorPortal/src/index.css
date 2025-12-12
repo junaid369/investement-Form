@@ -869,11 +869,61 @@ body {
 
 /* Declaration Checkbox */
 .form-section input[type="checkbox"] {
-  width: 20px;
-  height: 20px;
-  min-width: 20px;
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
   accent-color: var(--primary-gold);
   cursor: pointer;
+  border: 2px solid var(--primary-gold);
+  border-radius: 4px;
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--bg-input);
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.form-section input[type="checkbox"]:checked {
+  background: var(--primary-gold);
+}
+
+.form-section input[type="checkbox"]:checked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--bg-dark);
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.form-section input[type="checkbox"]:hover {
+  border-color: var(--primary-gold-dark);
+  box-shadow: 0 0 5px rgba(212, 175, 55, 0.3);
+}
+
+.declaration-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  cursor: pointer;
+  padding: 15px;
+  background: rgba(212, 175, 55, 0.05);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.declaration-label:hover {
+  background: rgba(212, 175, 55, 0.1);
+  border-color: var(--primary-gold);
+}
+
+.declaration-label span {
+  color: var(--text-light);
+  line-height: 1.6;
+  font-size: 0.95rem;
 }
 
 /* Auto-save Indicator */
