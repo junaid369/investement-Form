@@ -578,17 +578,26 @@ app.get("/api/user/submissions/:id", authenticateToken, async (req, res) => {
       return res.status(404).json({ success: false, message: "Submission not found" });
     }
 
-    // Verify ownership
+    // Verify ownership - check userId first, then fall back to phone/email matching
     const user = await User.findById(req.user.userId);
-    if (
-      submission.personalInfo.phone !== user.phone &&
-      submission.personalInfo.email !== user.email
-    ) {
+    const phoneDigits = user.phone ? user.phone.replace(/\D/g, '').slice(-9) : '';
+    const submissionPhoneDigits = submission.personalInfo?.phone ? submission.personalInfo.phone.replace(/\D/g, '').slice(-9) : '';
+
+    const isOwner =
+      (submission.userId && submission.userId.toString() === user._id.toString()) ||
+      (submission.personalInfo?.phone === user.phone) ||
+      (submission.personalInfo?.email === user.email) ||
+      (submission.personalInfo?.email && user.email && submission.personalInfo.email.toLowerCase() === user.email.toLowerCase()) ||
+      (phoneDigits && submissionPhoneDigits && phoneDigits === submissionPhoneDigits);
+
+    if (!isOwner) {
+      console.log("Access denied for user:", user._id, "submission userId:", submission.userId);
       return res.status(403).json({ success: false, message: "Access denied" });
     }
 
     res.json({ success: true, submission });
   } catch (error) {
+    console.error("Get submission error:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -601,12 +610,19 @@ app.delete("/api/user/submissions/:id", authenticateToken, async (req, res) => {
       return res.status(404).json({ success: false, message: "Submission not found" });
     }
 
-    // Verify ownership
+    // Verify ownership - check userId first, then fall back to phone/email matching
     const user = await User.findById(req.user.userId);
-    if (
-      submission.personalInfo.phone !== user.phone &&
-      submission.personalInfo.email !== user.email
-    ) {
+    const phoneDigits = user.phone ? user.phone.replace(/\D/g, '').slice(-9) : '';
+    const submissionPhoneDigits = submission.personalInfo?.phone ? submission.personalInfo.phone.replace(/\D/g, '').slice(-9) : '';
+
+    const isOwner =
+      (submission.userId && submission.userId.toString() === user._id.toString()) ||
+      (submission.personalInfo?.phone === user.phone) ||
+      (submission.personalInfo?.email === user.email) ||
+      (submission.personalInfo?.email && user.email && submission.personalInfo.email.toLowerCase() === user.email.toLowerCase()) ||
+      (phoneDigits && submissionPhoneDigits && phoneDigits === submissionPhoneDigits);
+
+    if (!isOwner) {
       return res.status(403).json({ success: false, message: "Access denied" });
     }
 

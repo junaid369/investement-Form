@@ -904,26 +904,29 @@ body {
 }
 
 .declaration-label {
-  display: flex;
-  align-items: flex-start;
-  gap: 15px;
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 15px !important;
   cursor: pointer;
-  padding: 15px;
-  background: rgba(212, 175, 55, 0.05);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
+  padding: 20px !important;
+  background: rgba(212, 175, 55, 0.1) !important;
+  border: 2px solid var(--primary-gold) !important;
+  border-radius: 10px !important;
   transition: all 0.3s ease;
+  margin-bottom: 10px;
 }
 
 .declaration-label:hover {
-  background: rgba(212, 175, 55, 0.1);
-  border-color: var(--primary-gold);
+  background: rgba(212, 175, 55, 0.15) !important;
+  border-color: var(--primary-gold-dark) !important;
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
 }
 
 .declaration-label span {
-  color: var(--text-light);
-  line-height: 1.6;
+  color: var(--text-light) !important;
+  line-height: 1.7;
   font-size: 0.95rem;
+  flex: 1;
 }
 
 /* Auto-save Indicator */
