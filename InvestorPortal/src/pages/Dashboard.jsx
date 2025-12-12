@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiFileText, FiClock, FiCheckCircle, FiXCircle, FiPlus, FiSearch, FiEye, FiEdit2, FiTrash2 } from 'react-icons/fi';
+import { FiFileText, FiClock, FiCheckCircle, FiXCircle, FiPlus, FiSearch, FiEye, FiEdit2, FiTrash2, FiAlertCircle } from 'react-icons/fi';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { submissionAPI } from '../services/api';
@@ -10,6 +10,7 @@ const Dashboard = () => {
   const [submissions, setSubmissions] = useState([]);
   const [stats, setStats] = useState({
     total: 0,
+    draft: 0,
     pending: 0,
     verified: 0,
     rejected: 0,
@@ -40,6 +41,7 @@ const Dashboard = () => {
         const all = response.data.allSubmissions || response.data.submissions || [];
         setStats({
           total: response.data.total || all.length,
+          draft: all.filter(s => s.status === 'draft').length,
           pending: all.filter(s => s.status === 'pending').length,
           verified: all.filter(s => s.status === 'verified').length,
           rejected: all.filter(s => s.status === 'rejected').length,
@@ -102,6 +104,15 @@ const Dashboard = () => {
             <div className="stat-info">
               <h3>{stats.total}</h3>
               <p>Total Submissions</p>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon draft">
+              <FiAlertCircle />
+            </div>
+            <div className="stat-info">
+              <h3>{stats.draft}</h3>
+              <p>Incomplete Drafts</p>
             </div>
           </div>
           <div className="stat-card">
@@ -172,7 +183,11 @@ const Dashboard = () => {
                 </thead>
                 <tbody>
                   {submissions.map((item, index) => (
-                    <tr key={item._id} onClick={() => navigate(`/view/${item._id}`)}>
+                    <tr
+                      key={item._id}
+                      onClick={() => navigate(item.status === 'draft' ? `/form/${item._id}` : `/view/${item._id}`)}
+                      className={item.status === 'draft' ? 'draft-row' : ''}
+                    >
                       <td>{(currentPage - 1) * 10 + index + 1}</td>
                       <td className="agreement-number">
                         {item.courtAgreementNumber || 'N/A'}
@@ -183,22 +198,37 @@ const Dashboard = () => {
                       </td>
                       <td>
                         <span className={`status-badge ${item.status}`}>
-                          {item.status}
+                          {item.status === 'draft'
+                            ? `Draft (${item.completedSections?.length || 0}/7)`
+                            : item.status}
                         </span>
                       </td>
-                      <td>{formatDate(item.submittedAt)}</td>
+                      <td>{formatDate(item.submittedAt || item.createdAt)}</td>
                       <td>
                         <div className="action-btns">
-                          <button
-                            className="action-btn view"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/view/${item._id}`);
-                            }}
-                          >
-                            <FiEye />
-                          </button>
-                          {item.status === 'pending' && (
+                          {item.status === 'draft' ? (
+                            <button
+                              className="action-btn edit"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/form/${item._id}`);
+                              }}
+                              title="Continue editing"
+                            >
+                              <FiEdit2 />
+                            </button>
+                          ) : (
+                            <button
+                              className="action-btn view"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/view/${item._id}`);
+                              }}
+                            >
+                              <FiEye />
+                            </button>
+                          )}
+                          {(item.status === 'draft' || item.status === 'pending') && (
                             <button
                               className="action-btn edit"
                               onClick={(e) => {

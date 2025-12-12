@@ -17,6 +17,8 @@ const COUNTRY_CODES = [
   { code: '+1', country: 'USA' },
 ];
 
+const STORAGE_KEY = 'investorForm_draft';
+
 const initialFormData = {
   courtAgreementNumber: '',
   personalInfo: {
@@ -71,6 +73,8 @@ const initialFormData = {
     confirmed: false,
     signature: '',
   },
+  // Track completed sections (1-7)
+  completedSections: [],
 };
 
 const InvestmentForm = () => {
@@ -90,8 +94,26 @@ const InvestmentForm = () => {
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState('');
   const [errors, setErrors] = useState({});
+  const [draftId, setDraftId] = useState(null);
 
   const totalSections = 7;
+
+  // Load from localStorage on mount (for new forms only)
+  useEffect(() => {
+    if (!id) {
+      const savedData = localStorage.getItem(STORAGE_KEY);
+      if (savedData) {
+        try {
+          const parsed = JSON.parse(savedData);
+          setFormData(parsed.formData || initialFormData);
+          setCurrentSection(parsed.currentSection || 1);
+          setDraftId(parsed.draftId || null);
+        } catch (e) {
+          console.error('Error loading saved form:', e);
+        }
+      }
+    }
+  }, []);
 
   // Load existing submission if editing
   useEffect(() => {
@@ -100,7 +122,20 @@ const InvestmentForm = () => {
     }
   }, [id]);
 
-  // Auto-save draft
+  // Save to localStorage on form change (for new forms)
+  useEffect(() => {
+    if (!id && (formData.personalInfo.fullName || formData.courtAgreementNumber)) {
+      const dataToSave = {
+        formData,
+        currentSection,
+        draftId,
+        savedAt: new Date().toISOString(),
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+    }
+  }, [formData, currentSection, draftId, id]);
+
+  // Auto-save draft to server
   useEffect(() => {
     const timer = setTimeout(() => {
       if (formData.personalInfo.fullName || formData.courtAgreementNumber) {
@@ -138,7 +173,13 @@ const InvestmentForm = () => {
           dividendHistory: data.dividendHistory || initialFormData.dividendHistory,
           remarks: data.remarks || initialFormData.remarks,
           declaration: data.declaration || initialFormData.declaration,
+          completedSections: data.completedSections || [],
         });
+        // Go to first incomplete section or last section
+        if (data.completedSections && data.completedSections.length > 0) {
+          const nextIncomplete = [1, 2, 3, 4, 5, 6, 7].find(s => !data.completedSections.includes(s));
+          setCurrentSection(nextIncomplete || 7);
+        }
       }
     } catch (error) {
       console.error('Error loading submission:', error);
@@ -146,6 +187,12 @@ const InvestmentForm = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Check if all required sections are complete
+  const isFormComplete = () => {
+    const requiredSections = [1, 2, 3, 7]; // Sections with required fields
+    return requiredSections.every(s => formData.completedSections.includes(s));
   };
 
   const saveDraft = useCallback(async () => {
@@ -161,13 +208,19 @@ const InvestmentForm = () => {
             ? formData.personalInfo.mobileCode + formData.personalInfo.mobile
             : null,
         },
-        status: 'draft',
+        completedSections: formData.completedSections,
+        status: 'draft', // Always draft until final submit
       };
 
       if (id) {
         await submissionAPI.updateDraft(id, draftData);
+      } else if (draftId) {
+        await submissionAPI.updateDraft(draftId, draftData);
       } else {
-        await submissionAPI.saveDraft(draftData);
+        const response = await submissionAPI.saveDraft(draftData);
+        if (response.data.success && response.data.submission?._id) {
+          setDraftId(response.data.submission._id);
+        }
       }
       setSaveStatus('saved');
     } catch (error) {
@@ -177,7 +230,7 @@ const InvestmentForm = () => {
       setSaving(false);
       setTimeout(() => setSaveStatus(''), 3000);
     }
-  }, [formData, id]);
+  }, [formData, id, draftId]);
 
   const handleChange = (section, field, value) => {
     setFormData((prev) => ({
@@ -248,6 +301,14 @@ const InvestmentForm = () => {
   const nextSection = () => {
     if (!validateSection(currentSection)) return;
 
+    // Mark current section as complete
+    if (!formData.completedSections.includes(currentSection)) {
+      setFormData((prev) => ({
+        ...prev,
+        completedSections: [...prev.completedSections, currentSection],
+      }));
+    }
+
     if (currentSection < totalSections) {
       setCurrentSection((prev) => prev + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -266,6 +327,12 @@ const InvestmentForm = () => {
 
     if (!validateSection(currentSection)) return;
 
+    // Mark final section as complete
+    const allCompleted = [...formData.completedSections];
+    if (!allCompleted.includes(7)) {
+      allCompleted.push(7);
+    }
+
     setLoading(true);
     try {
       const submitData = new FormData();
@@ -279,6 +346,9 @@ const InvestmentForm = () => {
             ? formData.personalInfo.mobileCode + formData.personalInfo.mobile
             : null,
         },
+        completedSections: allCompleted,
+        // Only set to 'pending' if all sections complete, otherwise 'draft'
+        status: allCompleted.length === 7 ? 'pending' : 'draft',
       };
 
       submitData.append('formData', JSON.stringify(formDataToSubmit));
@@ -293,6 +363,8 @@ const InvestmentForm = () => {
       const response = await submissionAPI.submitForm(submitData);
 
       if (response.data.success) {
+        // Clear localStorage on successful submit
+        localStorage.removeItem(STORAGE_KEY);
         alert('Form submitted successfully!');
         navigate('/dashboard');
       } else {
@@ -335,10 +407,31 @@ const InvestmentForm = () => {
           </div>
 
           <div className="form-progress">
-            <div className="progress-bar">
-              <div className="progress-fill" style={{ width: `${progress}%` }}></div>
+            <div className="progress-steps">
+              {[1, 2, 3, 4, 5, 6, 7].map((step) => (
+                <div
+                  key={step}
+                  className={`progress-step ${currentSection === step ? 'active' : ''} ${formData.completedSections.includes(step) ? 'completed' : ''}`}
+                  onClick={() => {
+                    // Allow jumping to completed sections or current
+                    if (formData.completedSections.includes(step) || step <= currentSection) {
+                      setCurrentSection(step);
+                    }
+                  }}
+                  title={`Section ${step}${formData.completedSections.includes(step) ? ' (Completed)' : ''}`}
+                >
+                  {formData.completedSections.includes(step) ? <FiCheck /> : step}
+                </div>
+              ))}
             </div>
-            <p className="progress-text">Step {currentSection} of {totalSections}</p>
+            <p className="progress-text">
+              Step {currentSection} of {totalSections}
+              {formData.completedSections.length > 0 && (
+                <span style={{ color: 'var(--primary-color)', marginLeft: '10px' }}>
+                  ({formData.completedSections.length} completed)
+                </span>
+              )}
+            </p>
           </div>
 
           <form onSubmit={handleSubmit}>

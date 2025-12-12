@@ -422,6 +422,11 @@ body {
   color: var(--error-color);
 }
 
+.stat-icon.draft {
+  background: rgba(156, 163, 175, 0.2);
+  color: #9ca3af;
+}
+
 .stat-info h3 {
   font-size: 2rem;
   color: var(--text-light);
@@ -508,6 +513,15 @@ body {
 .submissions-table tbody tr:hover {
   background: rgba(212, 175, 55, 0.05);
   cursor: pointer;
+}
+
+.submissions-table tbody tr.draft-row {
+  background: rgba(156, 163, 175, 0.1);
+  border-left: 3px solid #9ca3af;
+}
+
+.submissions-table tbody tr.draft-row:hover {
+  background: rgba(156, 163, 175, 0.15);
 }
 
 .submissions-table td {
@@ -679,6 +693,52 @@ body {
   font-size: 0.85rem;
   color: var(--text-muted);
   text-align: center;
+}
+
+/* Progress Steps */
+.progress-steps {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.progress-step {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.progress-step:hover {
+  border-color: var(--primary-gold);
+  color: var(--primary-gold);
+}
+
+.progress-step.active {
+  border-color: var(--primary-gold);
+  background: var(--primary-gold);
+  color: var(--bg-dark);
+}
+
+.progress-step.completed {
+  border-color: var(--success-color);
+  background: var(--success-color);
+  color: white;
+}
+
+.progress-step.completed:hover {
+  background: var(--success-color);
+  border-color: var(--success-color);
 }
 
 /* Form Section */

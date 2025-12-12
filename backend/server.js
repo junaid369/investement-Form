@@ -69,51 +69,51 @@ mongoose
   .then(() => console.log("MongoDB Connected"))
   .catch((err) => console.error("MongoDB Connection Error:", err));
 
-// Investor Form Schema - Updated Structure
+// Investor Form Schema - Updated Structure (fields not required to support drafts)
 const investorFormSchema = new mongoose.Schema(
   {
     // Court Agreement Number
-    courtAgreementNumber: { type: String, required: true },
+    courtAgreementNumber: { type: String },
 
     // Section 1: Personal Information
     personalInfo: {
-      fullName: { type: String, required: true },
-      email: { type: String, required: true },
-      phone: { type: String, required: true },
+      fullName: { type: String },
+      email: { type: String },
+      phone: { type: String },
       phoneCode: { type: String },
       mobile: { type: String },
       mobileCode: { type: String },
-      country: { type: String, required: true },
-      address: { type: String, required: true },
-      city: { type: String, required: true },
+      country: { type: String },
+      address: { type: String },
+      city: { type: String },
       state: { type: String },
       pincode: { type: String },
     },
 
     // Section 2: Bank Details
     bankDetails: {
-      bankName: { type: String, required: true },
-      accountNumber: { type: String, required: true },
-      accountHolderName: { type: String, required: true },
+      bankName: { type: String },
+      accountNumber: { type: String },
+      accountHolderName: { type: String },
       branchName: { type: String },
       iban: { type: String },
     },
 
-    // Section 3: Investment Details (Combined - replaces investmentHistory and investmentRecords)
+    // Section 3: Investment Details
     investmentDetails: {
       referenceNumber: { type: String },
-      amount: { type: Number, required: true },
-      investmentDate: { type: Date, required: true },
-      duration: { type: String, required: true },
-      annualDividendPercentage: { type: Number, required: true },
-      dividendFrequency: { type: String, required: true },
-      status: { type: String, required: true },
+      amount: { type: Number },
+      investmentDate: { type: Date },
+      duration: { type: String },
+      annualDividendPercentage: { type: Number },
+      dividendFrequency: { type: String },
+      status: { type: String },
     },
 
-    // Payment Method (now part of investment section in frontend)
+    // Payment Method
     paymentMethod: {
-      method: { type: String, required: true },
-      paidByCheque: { type: Boolean, required: true },
+      method: { type: String },
+      paidByCheque: { type: Boolean },
       chequeNumber: { type: String },
       chequeDate: { type: Date },
       chequeBankName: { type: String },
@@ -121,10 +121,10 @@ const investorFormSchema = new mongoose.Schema(
 
     // Section 4: Dividend History
     dividendHistory: {
-      totalReceived: { type: Number, required: true },
+      totalReceived: { type: Number },
       lastReceivedDate: { type: Date },
       lastAmount: { type: Number },
-      hasPending: { type: Boolean, required: true },
+      hasPending: { type: Boolean },
       pendingAmount: { type: Number },
     },
 
@@ -145,13 +145,17 @@ const investorFormSchema = new mongoose.Schema(
 
     // Section 7: Declaration
     declaration: {
-      confirmed: { type: Boolean, required: true },
-      signature: { type: String, required: true },
+      confirmed: { type: Boolean },
+      signature: { type: String },
     },
+
+    // Track completed sections (1-7)
+    completedSections: [{ type: Number }],
 
     // Meta
     submittedAt: { type: Date, default: Date.now },
-    status: { type: String, default: "pending", enum: ["pending", "verified", "rejected"] },
+    // draft = incomplete form, pending = complete form awaiting review
+    status: { type: String, default: "draft", enum: ["draft", "pending", "verified", "rejected"] },
   },
   { timestamps: true }
 );
