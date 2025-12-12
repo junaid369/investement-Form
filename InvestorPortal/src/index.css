@@ -655,6 +655,10 @@ body {
   margin-bottom: 20px;
 }
 
+.empty-state .btn {
+  margin: 0 auto;
+}
+
 /* Form Page */
 .form-page-container {
   flex: 1;

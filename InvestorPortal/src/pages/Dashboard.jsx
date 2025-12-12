@@ -293,8 +293,20 @@ const Dashboard = () => {
                   : 'You haven\'t submitted any forms yet.'}
               </p>
               {!searchTerm && (
-                <button className="btn btn-primary" style={{ width: 'auto', padding: '12px 30px' }} onClick={() => navigate('/form')}>
-                  <FiPlus /> Create Your First Submission
+                <button
+                  className="btn btn-primary"
+                  style={{
+                    width: 'auto',
+                    padding: '15px 30px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '10px'
+                  }}
+                  onClick={() => navigate('/form')}
+                >
+                  <FiPlus style={{ fontSize: '1.5rem' }} />
+                  <span>Create Your First Submission</span>
                 </button>
               )}
             </div>
