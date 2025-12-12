@@ -505,7 +505,7 @@ app.get("/api/user/submissions", authenticateToken, async (req, res) => {
     const pageNum = parseInt(page);
     const limitNum = parseInt(limit);
     const skip = (pageNum - 1) * limitNum;
-
+console.log("Fetching submissions for user:", req.user.userId);
     // Get user's phone/email for filtering
     const user = await User.findById(req.user.userId);
     if (!user) {
