@@ -679,6 +679,15 @@ body {
   background: linear-gradient(135deg, var(--primary-gold) 0%, var(--primary-gold-dark) 100%);
   padding: 25px 30px;
   color: var(--bg-dark);
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 15px;
+}
+
+.form-header-content {
+  flex: 1;
 }
 
 .form-header h2 {
@@ -691,15 +700,7 @@ body {
   font-size: 0.9rem;
 }
 
-.form-header {
-  position: relative;
-}
-
 .clear-draft-btn {
-  position: absolute;
-  top: 50%;
-  right: 20px;
-  transform: translateY(-50%);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -711,6 +712,8 @@ body {
   cursor: pointer;
   font-size: 0.85rem;
   transition: all 0.3s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .clear-draft-btn:hover {
@@ -862,6 +865,15 @@ body {
 .nav-btn.submit:hover {
   transform: translateY(-2px);
   box-shadow: 0 5px 20px rgba(212, 175, 55, 0.4);
+}
+
+/* Declaration Checkbox */
+.form-section input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  accent-color: var(--primary-gold);
+  cursor: pointer;
 }
 
 /* Auto-save Indicator */
@@ -1211,11 +1223,12 @@ body {
 
   .form-header {
     padding: 20px 15px;
+    flex-direction: column;
+    gap: 12px;
   }
 
   .form-header h2 {
     font-size: 1.2rem;
-    padding-right: 100px;
   }
 
   .form-header p {
@@ -1223,10 +1236,7 @@ body {
   }
 
   .clear-draft-btn {
-    position: absolute;
-    top: 15px;
-    right: 10px;
-    transform: none;
+    align-self: flex-start;
     padding: 6px 10px;
     font-size: 0.75rem;
   }
@@ -1357,7 +1367,6 @@ body {
 
   .form-header h2 {
     font-size: 1rem;
-    padding-right: 80px;
   }
 
   .clear-draft-btn {

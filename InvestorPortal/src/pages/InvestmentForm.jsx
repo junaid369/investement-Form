@@ -443,8 +443,10 @@ const InvestmentForm = () => {
       <main className="form-page-container">
         <div className="form-card">
           <div className="form-header">
-            <h2>{isEditing ? 'Edit Submission' : 'Investment Details Form'}</h2>
-            <p>Please fill in all required information accurately</p>
+            <div className="form-header-content">
+              <h2>{isEditing ? 'Edit Submission' : 'Investment Details Form'}</h2>
+              <p>Please fill in all required information accurately</p>
+            </div>
             {!isEditing && hasSavedDraft && !showDraftModal && (
               <button
                 type="button"
