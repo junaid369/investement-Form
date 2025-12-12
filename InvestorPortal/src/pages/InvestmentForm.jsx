@@ -360,6 +360,8 @@ const InvestmentForm = () => {
 
       const formDataToSubmit = {
         ...formData,
+        // Include _id if editing existing submission
+        ...(id && { _id: id }),
         personalInfo: {
           ...formData.personalInfo,
           phone: formData.personalInfo.phoneCode + formData.personalInfo.phone,

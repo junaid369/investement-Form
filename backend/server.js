@@ -653,7 +653,7 @@ app.put("/api/user/submissions/draft/:id", authenticateToken, async (req, res) =
 
     const updatedSubmission = await InvestorForm.findByIdAndUpdate(
       req.params.id,
-      { ...req.body, status: "draft" },
+      { ...req.body, status: "draft", userId: req.user.userId },
       { new: true }
     );
 
@@ -698,13 +698,34 @@ app.post(
 
       formData.documents = documents;
 
-      const newForm = new InvestorForm(formData);
-      await newForm.save();
+      let submission;
+
+      // Check if we're updating an existing submission (editing a draft)
+      if (formData._id) {
+        const existingSubmission = await InvestorForm.findById(formData._id);
+        if (existingSubmission && existingSubmission.status !== "verified") {
+          // Update existing submission
+          delete formData._id; // Remove _id from update data
+          submission = await InvestorForm.findByIdAndUpdate(
+            existingSubmission._id,
+            formData,
+            { new: true }
+          );
+        } else {
+          // Create new if not found or verified
+          const newForm = new InvestorForm(formData);
+          submission = await newForm.save();
+        }
+      } else {
+        // Create new submission
+        const newForm = new InvestorForm(formData);
+        submission = await newForm.save();
+      }
 
       res.status(201).json({
         success: true,
         message: "Form submitted successfully!",
-        submission: newForm,
+        submission,
       });
     } catch (error) {
       console.error("Submit Error:", error);
