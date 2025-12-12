@@ -49,7 +49,7 @@ export const submissionAPI = {
   delete: (id) => api.delete(`/api/user/submissions/${id}`),
   saveDraft: (data) => api.post('/api/user/submissions/draft', data),
   updateDraft: (id, data) => api.put(`/api/user/submissions/draft/${id}`, data),
-  submitForm: (formData) => api.post('/api/submit', formData, {
+  submitForm: (formData) => api.post('/api/user/submit', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
 };

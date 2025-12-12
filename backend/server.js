@@ -72,6 +72,9 @@ mongoose
 // Investor Form Schema - Updated Structure (fields not required to support drafts)
 const investorFormSchema = new mongoose.Schema(
   {
+    // Link to user who created this submission
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+
     // Court Agreement Number
     courtAgreementNumber: { type: String },
 
@@ -509,9 +512,10 @@ app.get("/api/user/submissions", authenticateToken, async (req, res) => {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    // Build query - filter by user's phone or email
+    // Build query - filter by userId OR user's phone/email (for backwards compatibility)
     let query = {
       $or: [
+        { userId: user._id },
         { "personalInfo.phone": user.phone },
         { "personalInfo.email": user.email },
       ],
@@ -537,9 +541,10 @@ app.get("/api/user/submissions", authenticateToken, async (req, res) => {
       .skip(skip)
       .limit(limitNum);
 
-    // Get all submissions for stats
+    // Get all submissions for stats (check userId OR matching phone/email for backwards compatibility)
     const allSubmissions = await InvestorForm.find({
       $or: [
+        { userId: user._id },
         { "personalInfo.phone": user.phone },
         { "personalInfo.email": user.email },
       ],
@@ -616,6 +621,7 @@ app.post("/api/user/submissions/draft", authenticateToken, async (req, res) => {
   try {
     const formData = req.body;
     formData.status = "draft";
+    formData.userId = req.user.userId; // Link draft to authenticated user
 
     const newForm = new InvestorForm(formData);
     await newForm.save();
@@ -651,7 +657,60 @@ app.put("/api/user/submissions/draft/:id", authenticateToken, async (req, res) =
   }
 });
 
-// Submit form with file uploads to S3
+// Submit form with file uploads to S3 (authenticated user)
+app.post(
+  "/api/user/submit",
+  authenticateToken,
+  upload.fields([
+    { name: "agreementCopy", maxCount: 1 },
+    { name: "paymentProof", maxCount: 1 },
+    { name: "dividendReceipts", maxCount: 1 },
+    { name: "otherDocuments", maxCount: 1 },
+  ]),
+  async (req, res) => {
+    try {
+      const formData = JSON.parse(req.body.formData);
+      formData.userId = req.user.userId; // Link submission to authenticated user
+
+      // Upload files to S3 and get URLs
+      const documents = {};
+
+      if (req.files) {
+        if (req.files.agreementCopy) {
+          documents.agreementCopy = await uploadToS3(req.files.agreementCopy[0]);
+        }
+        if (req.files.paymentProof) {
+          documents.paymentProof = await uploadToS3(req.files.paymentProof[0]);
+        }
+        if (req.files.dividendReceipts) {
+          documents.dividendReceipts = await uploadToS3(req.files.dividendReceipts[0]);
+        }
+        if (req.files.otherDocuments) {
+          documents.otherDocuments = await uploadToS3(req.files.otherDocuments[0]);
+        }
+      }
+
+      formData.documents = documents;
+
+      const newForm = new InvestorForm(formData);
+      await newForm.save();
+
+      res.status(201).json({
+        success: true,
+        message: "Form submitted successfully!",
+        submission: newForm,
+      });
+    } catch (error) {
+      console.error("Submit Error:", error);
+      res.status(400).json({
+        success: false,
+        message: error.message || "Failed to submit form",
+      });
+    }
+  }
+);
+
+// Submit form with file uploads to S3 (legacy unauthenticated - kept for backwards compatibility)
 app.post(
   "/api/submit",
   upload.fields([
