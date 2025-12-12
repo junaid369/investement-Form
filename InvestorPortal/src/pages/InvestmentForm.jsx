@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FiArrowLeft, FiArrowRight, FiSave, FiCheck } from 'react-icons/fi';
+import { FiArrowLeft, FiArrowRight, FiCheck, FiRefreshCw } from 'react-icons/fi';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { submissionAPI } from '../services/api';
@@ -91,10 +91,11 @@ const InvestmentForm = () => {
     otherDocuments: null,
   });
   const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState('');
   const [errors, setErrors] = useState({});
   const [draftId, setDraftId] = useState(null);
+  const [hasSavedDraft, setHasSavedDraft] = useState(false);
+  const [showDraftModal, setShowDraftModal] = useState(false);
 
   const totalSections = 7;
 
@@ -105,15 +106,43 @@ const InvestmentForm = () => {
       if (savedData) {
         try {
           const parsed = JSON.parse(savedData);
-          setFormData(parsed.formData || initialFormData);
-          setCurrentSection(parsed.currentSection || 1);
-          setDraftId(parsed.draftId || null);
+          // Check if there's meaningful saved data
+          if (parsed.formData?.personalInfo?.fullName || parsed.formData?.courtAgreementNumber) {
+            setHasSavedDraft(true);
+            setShowDraftModal(true);
+          }
         } catch (e) {
-          console.error('Error loading saved form:', e);
+          console.error('Error checking saved form:', e);
         }
       }
     }
-  }, []);
+  }, [id]);
+
+  // Load saved draft data
+  const loadSavedDraft = () => {
+    const savedData = localStorage.getItem(STORAGE_KEY);
+    if (savedData) {
+      try {
+        const parsed = JSON.parse(savedData);
+        setFormData(parsed.formData || initialFormData);
+        setCurrentSection(parsed.currentSection || 1);
+        setDraftId(parsed.draftId || null);
+      } catch (e) {
+        console.error('Error loading saved form:', e);
+      }
+    }
+    setShowDraftModal(false);
+  };
+
+  // Clear saved draft and start fresh
+  const clearDraft = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setFormData(initialFormData);
+    setCurrentSection(1);
+    setDraftId(null);
+    setHasSavedDraft(false);
+    setShowDraftModal(false);
+  };
 
   // Load existing submission if editing
   useEffect(() => {
@@ -189,14 +218,7 @@ const InvestmentForm = () => {
     }
   };
 
-  // Check if all required sections are complete
-  const isFormComplete = () => {
-    const requiredSections = [1, 2, 3, 7]; // Sections with required fields
-    return requiredSections.every(s => formData.completedSections.includes(s));
-  };
-
   const saveDraft = useCallback(async () => {
-    setSaving(true);
     setSaveStatus('saving');
     try {
       const draftData = {
@@ -378,8 +400,6 @@ const InvestmentForm = () => {
     }
   };
 
-  const progress = (currentSection / totalSections) * 100;
-
   if (loading && isEditing) {
     return (
       <div className="app-container">
@@ -399,11 +419,47 @@ const InvestmentForm = () => {
     <div className="app-container">
       <Header />
 
+      {/* Draft Recovery Modal */}
+      {showDraftModal && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <div className="modal-header">
+              <h3>Continue Previous Form?</h3>
+            </div>
+            <div className="modal-body">
+              <p>You have an unsaved form in progress. Would you like to continue where you left off or start a new form?</p>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={clearDraft}>
+                <FiRefreshCw style={{ marginRight: '8px' }} /> Start Fresh
+              </button>
+              <button className="btn btn-primary" onClick={loadSavedDraft}>
+                Continue Draft
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <main className="form-page-container">
         <div className="form-card">
           <div className="form-header">
             <h2>{isEditing ? 'Edit Submission' : 'Investment Details Form'}</h2>
             <p>Please fill in all required information accurately</p>
+            {!isEditing && hasSavedDraft && !showDraftModal && (
+              <button
+                type="button"
+                className="clear-draft-btn"
+                onClick={() => {
+                  if (window.confirm('Are you sure you want to clear this draft and start fresh?')) {
+                    clearDraft();
+                  }
+                }}
+                title="Clear draft and start fresh"
+              >
+                <FiRefreshCw /> Start Fresh
+              </button>
+            )}
           </div>
 
           <div className="form-progress">

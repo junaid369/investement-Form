@@ -105,6 +105,25 @@ body {
   color: var(--bg-dark);
 }
 
+.home-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid var(--primary-gold);
+  color: var(--primary-gold);
+  padding: 8px 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.home-btn:hover {
+  background: var(--primary-gold);
+  color: var(--bg-dark);
+}
+
 /* Auth Pages */
 .auth-container {
   min-height: 100vh;
@@ -668,6 +687,33 @@ body {
   font-size: 0.9rem;
 }
 
+.form-header {
+  position: relative;
+}
+
+.clear-draft-btn {
+  position: absolute;
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 8px 14px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.3s ease;
+}
+
+.clear-draft-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: white;
+}
+
 /* Progress Bar */
 .form-progress {
   padding: 20px 30px;
@@ -1007,9 +1053,51 @@ body {
 /* Responsive */
 @media (max-width: 768px) {
   .header {
-    padding: 15px;
-    flex-direction: column;
-    gap: 15px;
+    padding: 12px 15px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .header-left {
+    flex: 1;
+    min-width: 150px;
+  }
+
+  .header-logo {
+    height: 40px;
+  }
+
+  .header-title h1 {
+    font-size: 1.1rem;
+  }
+
+  .header-title span {
+    font-size: 0.65rem;
+  }
+
+  .header-right {
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .user-info {
+    display: none;
+  }
+
+  .home-btn {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+  }
+
+  .home-btn-text {
+    display: none;
+  }
+
+  .logout-btn {
+    padding: 6px 12px;
+    font-size: 0.8rem;
   }
 
   .auth-card {
@@ -1020,19 +1108,60 @@ body {
     grid-template-columns: 1fr;
   }
 
+  .dashboard-container {
+    padding: 15px;
+  }
+
   .dashboard-header {
     flex-direction: column;
     gap: 15px;
     align-items: flex-start;
   }
 
+  .dashboard-header h2 {
+    font-size: 1.4rem;
+  }
+
+  .new-submission-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
   .stats-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .stat-card {
+    padding: 15px;
+    flex-direction: column;
+    text-align: center;
+    gap: 10px;
+  }
+
+  .stat-icon {
+    width: 45px;
+    height: 45px;
+    font-size: 1.2rem;
+  }
+
+  .stat-info h3 {
+    font-size: 1.5rem;
+  }
+
+  .stat-info p {
+    font-size: 0.75rem;
   }
 
   .submissions-table {
     display: block;
     overflow-x: auto;
+  }
+
+  .submissions-table th,
+  .submissions-table td {
+    padding: 10px 12px;
+    font-size: 0.85rem;
   }
 
   .otp-input {
@@ -1046,12 +1175,126 @@ body {
     align-items: flex-start;
   }
 
+  .search-box {
+    width: 100%;
+  }
+
   .search-box input {
+    width: 100%;
+  }
+
+  /* Form Page Mobile */
+  .form-page-container {
+    padding: 15px;
+  }
+
+  .form-card {
+    border-radius: 10px;
+  }
+
+  .form-header {
+    padding: 20px 15px;
+  }
+
+  .form-header h2 {
+    font-size: 1.2rem;
+    padding-right: 100px;
+  }
+
+  .form-header p {
+    font-size: 0.8rem;
+  }
+
+  .clear-draft-btn {
+    position: absolute;
+    top: 15px;
+    right: 10px;
+    transform: none;
+    padding: 6px 10px;
+    font-size: 0.75rem;
+  }
+
+  .form-progress {
+    padding: 15px;
+  }
+
+  .progress-steps {
+    gap: 6px;
+  }
+
+  .progress-step {
+    width: 32px;
+    height: 32px;
+    font-size: 0.75rem;
+  }
+
+  .progress-text {
+    font-size: 0.75rem;
+  }
+
+  .form-section {
+    padding: 20px 15px;
+  }
+
+  .section-title {
+    font-size: 1.1rem;
+  }
+
+  .form-navigation {
+    padding: 15px;
+    gap: 10px;
+  }
+
+  .nav-btn {
+    padding: 10px 15px;
+    font-size: 0.9rem;
+  }
+
+  .nav-btn.prev {
+    padding: 10px 12px;
+  }
+
+  /* Modal Mobile */
+  .modal {
+    padding: 20px;
+    margin: 15px;
+  }
+
+  .modal-header h3 {
+    font-size: 1.1rem;
+  }
+
+  .modal-body p {
+    font-size: 0.9rem;
+  }
+
+  .modal-footer {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .modal-footer .btn {
     width: 100%;
   }
 }
 
 @media (max-width: 480px) {
+  .header-left {
+    gap: 10px;
+  }
+
+  .header-logo {
+    height: 35px;
+  }
+
+  .header-title h1 {
+    font-size: 1rem;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
   .phone-input-group {
     flex-direction: column;
   }
@@ -1068,5 +1311,31 @@ body {
     width: 40px;
     height: 45px;
     font-size: 1.2rem;
+  }
+
+  .progress-step {
+    width: 28px;
+    height: 28px;
+    font-size: 0.7rem;
+  }
+
+  .form-header h2 {
+    font-size: 1rem;
+    padding-right: 80px;
+  }
+
+  .clear-draft-btn {
+    padding: 5px 8px;
+    font-size: 0.7rem;
+  }
+
+  .clear-draft-btn svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .nav-btn {
+    padding: 8px 12px;
+    font-size: 0.85rem;
   }
 }
