@@ -164,14 +164,34 @@ const userSchema = new mongoose.Schema(
     fullName: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     phone: { type: String, required: true, unique: true },
-    isVerified: { type: Boolean, default: false },
-    otp: { type: String },
-    otpExpiry: { type: Date },
+    isVerified: { type: Boolean, default: true },
   },
   { timestamps: true }
 );
 
 const User = mongoose.model("User", userSchema);
+
+// OTP Schema - Separate collection for OTP management
+const otpSchema = new mongoose.Schema(
+  {
+    phone: { type: String, required: true, index: true },
+    otp: { type: String, required: true },
+    isVerified: { type: Boolean, default: false },
+    expiresAt: { type: Date, required: true },
+    purpose: { type: String, enum: ["register", "login"], required: true },
+    // Store registration data temporarily until OTP is verified
+    tempUserData: {
+      fullName: { type: String },
+      email: { type: String },
+    },
+  },
+  { timestamps: true }
+);
+
+// Auto-delete expired OTPs after 1 hour
+otpSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 3600 });
+
+const OTP = mongoose.model("OTP", otpSchema);
 
 // JWT Secret
 const JWT_SECRET = process.env.JWT_SECRET || "matajar-investor-portal-secret-key-2024";
@@ -208,6 +228,38 @@ async function sendSmsOtp(otp, userNumber) {
   }
 }
 
+// Helper: Get or create OTP for a phone number
+async function getOrCreateOTP(phone, purpose, tempUserData = null) {
+  // Check if there's an existing valid, unused OTP for this phone
+  const existingOtp = await OTP.findOne({
+    phone,
+    isVerified: false,
+    expiresAt: { $gt: new Date() },
+    purpose,
+  });
+
+  if (existingOtp) {
+    // Reuse existing OTP - don't send new SMS
+    return { otp: existingOtp.otp, isExisting: true };
+  }
+
+  // Create new OTP
+  const newOtpCode = generateOTP();
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+  const otpDoc = new OTP({
+    phone,
+    otp: newOtpCode,
+    isVerified: false,
+    expiresAt,
+    purpose,
+    tempUserData,
+  });
+  await otpDoc.save();
+
+  return { otp: newOtpCode, isExisting: false };
+}
+
 // JWT Auth Middleware
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers["authorization"];
@@ -235,7 +287,7 @@ app.get("/", (req, res) => {
 
 // ==================== AUTH ROUTES ====================
 
-// Register new user
+// Register new user - Step 1: Send OTP (user created after verification)
 app.post("/api/auth/register", async (req, res) => {
   try {
     const { fullName, email, phone } = req.body;
@@ -249,26 +301,19 @@ app.post("/api/auth/register", async (req, res) => {
       return res.status(400).json({ success: false, message: "Phone number already registered" });
     }
 
-    // Generate OTP
-    const otp = generateOTP();
-    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    // Get or create OTP - store temp user data
+    const { otp, isExisting } = await getOrCreateOTP(phone, "register", { fullName, email });
 
-    // Create user
-    const user = new User({
-      fullName,
-      email,
-      phone,
-      otp,
-      otpExpiry,
-    });
-    await user.save();
-
-    // Send OTP
-    await sendSmsOtp(otp, phone);
+    // Only send SMS if new OTP was created
+    if (!isExisting) {
+      await sendSmsOtp(otp, phone);
+    }
 
     res.json({
       success: true,
-      message: "Registration successful. OTP sent to your phone.",
+      message: isExisting
+        ? "OTP already sent. Please enter the OTP to verify."
+        : "OTP sent to your phone. Please verify to complete registration.",
     });
   } catch (error) {
     console.error("Register Error:", error);
@@ -286,20 +331,19 @@ app.post("/api/auth/login", async (req, res) => {
       return res.status(404).json({ success: false, message: "User not found. Please register first." });
     }
 
-    // Generate OTP
-    const otp = generateOTP();
-    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    // Get or create OTP for login
+    const { otp, isExisting } = await getOrCreateOTP(phone, "login");
 
-    user.otp = otp;
-    user.otpExpiry = otpExpiry;
-    await user.save();
-
-    // Send OTP
-    await sendSmsOtp(otp, phone);
+    // Only send SMS if new OTP was created
+    if (!isExisting) {
+      await sendSmsOtp(otp, phone);
+    }
 
     res.json({
       success: true,
-      message: "OTP sent to your phone.",
+      message: isExisting
+        ? "OTP already sent. Please enter the OTP to verify."
+        : "OTP sent to your phone.",
     });
   } catch (error) {
     console.error("Login Error:", error);
@@ -307,30 +351,54 @@ app.post("/api/auth/login", async (req, res) => {
   }
 });
 
-// Send OTP (for resend)
+// Send OTP (for resend) - forces new OTP creation
 app.post("/api/auth/send-otp", async (req, res) => {
   try {
-    const { phone } = req.body;
+    const { phone, purpose = "login" } = req.body;
 
-    const user = await User.findOne({ phone });
-    if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
+    // For login purpose, check if user exists
+    if (purpose === "login") {
+      const user = await User.findOne({ phone });
+      if (!user) {
+        return res.status(404).json({ success: false, message: "User not found" });
+      }
     }
 
-    // Generate OTP
-    const otp = generateOTP();
-    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    // Invalidate any existing OTPs for this phone and purpose
+    await OTP.updateMany(
+      { phone, purpose, isVerified: false },
+      { $set: { expiresAt: new Date() } }
+    );
 
-    user.otp = otp;
-    user.otpExpiry = otpExpiry;
-    await user.save();
+    // Create new OTP
+    const newOtpCode = generateOTP();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-    // Send OTP
-    await sendSmsOtp(otp, phone);
+    // Get temp user data from old OTP if it's for registration
+    let tempUserData = null;
+    if (purpose === "register") {
+      const oldOtp = await OTP.findOne({ phone, purpose: "register" }).sort({ createdAt: -1 });
+      if (oldOtp && oldOtp.tempUserData) {
+        tempUserData = oldOtp.tempUserData;
+      }
+    }
+
+    const otpDoc = new OTP({
+      phone,
+      otp: newOtpCode,
+      isVerified: false,
+      expiresAt,
+      purpose,
+      tempUserData,
+    });
+    await otpDoc.save();
+
+    // Send SMS
+    await sendSmsOtp(newOtpCode, phone);
 
     res.json({
       success: true,
-      message: "OTP sent to your phone.",
+      message: "New OTP sent to your phone.",
     });
   } catch (error) {
     console.error("Send OTP Error:", error);
@@ -338,31 +406,62 @@ app.post("/api/auth/send-otp", async (req, res) => {
   }
 });
 
-// Verify OTP
+// Verify OTP - validates from OTP collection, creates user for registration
 app.post("/api/auth/verify-otp", async (req, res) => {
   try {
     const { phone, otp } = req.body;
 
-    const user = await User.findOne({ phone });
-    if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
-    }
+    // Find valid OTP in collection
+    const otpDoc = await OTP.findOne({
+      phone,
+      otp,
+      isVerified: false,
+      expiresAt: { $gt: new Date() },
+    });
 
-    // Check OTP
-    if (user.otp !== otp) {
+    if (!otpDoc) {
+      // Check if OTP exists but expired
+      const expiredOtp = await OTP.findOne({ phone, otp, isVerified: false });
+      if (expiredOtp) {
+        return res.status(400).json({ success: false, message: "OTP has expired" });
+      }
       return res.status(400).json({ success: false, message: "Invalid OTP" });
     }
 
-    // Check expiry
-    if (new Date() > user.otpExpiry) {
-      return res.status(400).json({ success: false, message: "OTP has expired" });
-    }
+    // Mark OTP as verified
+    otpDoc.isVerified = true;
+    await otpDoc.save();
 
-    // Mark as verified
-    user.isVerified = true;
-    user.otp = null;
-    user.otpExpiry = null;
-    await user.save();
+    let user;
+
+    if (otpDoc.purpose === "register") {
+      // For registration, create the user now
+      const { fullName, email } = otpDoc.tempUserData || {};
+      if (!fullName || !email) {
+        return res.status(400).json({ success: false, message: "Registration data not found. Please register again." });
+      }
+
+      // Double check user doesn't exist
+      const existingUser = await User.findOne({ $or: [{ email }, { phone }] });
+      if (existingUser) {
+        return res.status(400).json({ success: false, message: "User already exists. Please login instead." });
+      }
+
+      // Create user
+      user = new User({
+        fullName,
+        email,
+        phone,
+        isVerified: true,
+      });
+      await user.save();
+    } else {
+      // For login, find existing user
+      user = await User.findOne({ phone });
+      if (!user) {
+        return res.status(404).json({ success: false, message: "User not found" });
+      }
+    }
 
     // Generate JWT
     const token = jwt.sign(
@@ -373,7 +472,9 @@ app.post("/api/auth/verify-otp", async (req, res) => {
 
     res.json({
       success: true,
-      message: "OTP verified successfully",
+      message: otpDoc.purpose === "register"
+        ? "Registration completed successfully"
+        : "OTP verified successfully",
       token,
       user: {
         id: user._id,
