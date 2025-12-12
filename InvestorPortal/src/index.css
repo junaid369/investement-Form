@@ -1128,29 +1128,42 @@ body {
   }
 
   .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
+    display: flex;
+    overflow-x: auto;
     gap: 10px;
+    padding-bottom: 10px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .stats-grid::-webkit-scrollbar {
+    display: none;
   }
 
   .stat-card {
-    padding: 15px;
+    min-width: 120px;
+    padding: 12px 15px;
     flex-direction: column;
     text-align: center;
-    gap: 10px;
+    gap: 8px;
+    flex-shrink: 0;
   }
 
   .stat-icon {
-    width: 45px;
-    height: 45px;
-    font-size: 1.2rem;
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+    border-radius: 8px;
   }
 
   .stat-info h3 {
-    font-size: 1.5rem;
+    font-size: 1.3rem;
+    margin-bottom: 2px;
   }
 
   .stat-info p {
-    font-size: 0.75rem;
+    font-size: 0.65rem;
+    white-space: nowrap;
   }
 
   .submissions-table {
@@ -1292,7 +1305,26 @@ body {
   }
 
   .stats-grid {
-    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .stat-card {
+    min-width: 100px;
+    padding: 10px 12px;
+  }
+
+  .stat-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 0.9rem;
+  }
+
+  .stat-info h3 {
+    font-size: 1.1rem;
+  }
+
+  .stat-info p {
+    font-size: 0.6rem;
   }
 
   .phone-input-group {
