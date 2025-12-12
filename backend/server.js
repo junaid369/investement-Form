@@ -513,11 +513,15 @@ app.get("/api/user/submissions", authenticateToken, async (req, res) => {
     }
 
     // Build query - filter by userId OR user's phone/email (for backwards compatibility)
+    // Also check if phone contains the user's phone number (without country code matching issues)
+    const phoneDigits = user.phone ? user.phone.replace(/\D/g, '').slice(-9) : '';
     let query = {
       $or: [
         { userId: user._id },
         { "personalInfo.phone": user.phone },
         { "personalInfo.email": user.email },
+        ...(user.email ? [{ "personalInfo.email": { $regex: new RegExp(`^${user.email}$`, 'i') } }] : []),
+        ...(phoneDigits ? [{ "personalInfo.phone": { $regex: phoneDigits } }] : []),
       ],
     };
 
@@ -547,6 +551,8 @@ app.get("/api/user/submissions", authenticateToken, async (req, res) => {
         { userId: user._id },
         { "personalInfo.phone": user.phone },
         { "personalInfo.email": user.email },
+        ...(user.email ? [{ "personalInfo.email": { $regex: new RegExp(`^${user.email}$`, 'i') } }] : []),
+        ...(phoneDigits ? [{ "personalInfo.phone": { $regex: phoneDigits } }] : []),
       ],
     });
 
