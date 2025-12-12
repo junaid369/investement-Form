@@ -11,6 +11,311 @@ const ViewSubmission = () => {
   const [submission, setSubmission] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const handleDownloadPDF = () => {
+    if (!submission) return;
+
+    const printContent = printRef.current;
+    const originalContents = document.body.innerHTML;
+
+    // Create print-friendly HTML
+    const printHTML = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Investment Submission - ${submission.courtAgreementNumber || 'N/A'}</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            color: #333;
+            line-height: 1.6;
+          }
+          .print-header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #D4AF37;
+            padding-bottom: 20px;
+          }
+          .print-header h1 {
+            color: #D4AF37;
+            font-size: 24px;
+            margin-bottom: 5px;
+          }
+          .print-header p {
+            color: #666;
+            font-size: 14px;
+          }
+          .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-top: 10px;
+          }
+          .status-badge.pending { background: #FEF3C7; color: #92400E; }
+          .status-badge.verified { background: #D1FAE5; color: #065F46; }
+          .status-badge.rejected { background: #FEE2E2; color: #991B1B; }
+          .status-badge.draft { background: #E5E7EB; color: #374151; }
+          .section { margin-bottom: 25px; }
+          .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #D4AF37;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+          }
+          .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+          }
+          .field { margin-bottom: 10px; }
+          .field label {
+            display: block;
+            font-size: 11px;
+            color: #666;
+            text-transform: uppercase;
+            margin-bottom: 3px;
+          }
+          .field p {
+            font-size: 14px;
+            color: #333;
+          }
+          .field.highlight p {
+            color: #D4AF37;
+            font-weight: 600;
+          }
+          .full-width { grid-column: span 2; }
+          .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+          }
+          @media print {
+            body { padding: 0; }
+            @page { margin: 1cm; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="print-header">
+          <h1>Matajar Group - Investor Portal</h1>
+          <p>Investment Submission Details</p>
+          <span class="status-badge ${submission.status}">${submission.status}</span>
+        </div>
+
+        <div class="section">
+          <h3 class="section-title">Reference Information</h3>
+          <div class="grid">
+            <div class="field">
+              <label>Court Agreement Number</label>
+              <p>${submission.courtAgreementNumber || 'N/A'}</p>
+            </div>
+            <div class="field">
+              <label>Submission Date</label>
+              <p>${formatDate(submission.submittedAt || submission.createdAt)}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h3 class="section-title">Personal Information</h3>
+          <div class="grid">
+            <div class="field">
+              <label>Full Name</label>
+              <p>${submission.personalInfo?.fullName || 'N/A'}</p>
+            </div>
+            <div class="field">
+              <label>Email</label>
+              <p>${submission.personalInfo?.email || 'N/A'}</p>
+            </div>
+            <div class="field">
+              <label>Phone</label>
+              <p>${submission.personalInfo?.phone || 'N/A'}</p>
+            </div>
+            <div class="field">
+              <label>Mobile</label>
+              <p>${submission.personalInfo?.mobile || 'N/A'}</p>
+            </div>
+            <div class="field">
+              <label>Country</label>
+              <p>${submission.personalInfo?.country || 'N/A'}</p>
+            </div>
+            <div class="field">
+              <label>City</label>
+              <p>${submission.personalInfo?.city || 'N/A'}</p>
+            </div>
+            <div class="field full-width">
+              <label>Address</label>
+              <p>${submission.personalInfo?.address || 'N/A'}</p>
+            </div>
+            <div class="field">
+              <label>State</label>
+              <p>${submission.personalInfo?.state || 'N/A'}</p>
+            </div>
+            <div class="field">
+              <label>Postal Code</label>
+              <p>${submission.personalInfo?.pincode || 'N/A'}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h3 class="section-title">Bank Details</h3>
+          <div class="grid">
+            <div class="field">
+              <label>Bank Name</label>
+              <p>${submission.bankDetails?.bankName || 'N/A'}</p>
+            </div>
+            <div class="field">
+              <label>Account Number</label>
+              <p>${submission.bankDetails?.accountNumber || 'N/A'}</p>
+            </div>
+            <div class="field">
+              <label>Account Holder</label>
+              <p>${submission.bankDetails?.accountHolderName || 'N/A'}</p>
+            </div>
+            <div class="field">
+              <label>Branch</label>
+              <p>${submission.bankDetails?.branchName || 'N/A'}</p>
+            </div>
+            <div class="field">
+              <label>IBAN/SWIFT</label>
+              <p>${submission.bankDetails?.iban || 'N/A'}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h3 class="section-title">Investment Details</h3>
+          <div class="grid">
+            <div class="field highlight">
+              <label>Investment Amount</label>
+              <p>AED ${formatAmount(submission.investmentDetails?.amount)}</p>
+            </div>
+            <div class="field">
+              <label>Investment Date</label>
+              <p>${formatDate(submission.investmentDetails?.investmentDate)}</p>
+            </div>
+            <div class="field">
+              <label>Duration</label>
+              <p>${submission.investmentDetails?.duration || 'N/A'}</p>
+            </div>
+            <div class="field">
+              <label>Annual Dividend %</label>
+              <p>${submission.investmentDetails?.annualDividendPercentage || 'N/A'}%</p>
+            </div>
+            <div class="field">
+              <label>Dividend Frequency</label>
+              <p style="text-transform: capitalize;">${submission.investmentDetails?.dividendFrequency || 'N/A'}</p>
+            </div>
+            <div class="field">
+              <label>Investment Status</label>
+              <p style="text-transform: capitalize;">${submission.investmentDetails?.status || 'N/A'}</p>
+            </div>
+            <div class="field">
+              <label>Payment Method</label>
+              <p style="text-transform: capitalize;">${submission.paymentMethod?.method?.replace('_', ' ') || 'N/A'}</p>
+            </div>
+            <div class="field">
+              <label>Paid by Cheque</label>
+              <p>${submission.paymentMethod?.paidByCheque ? 'Yes' : 'No'}</p>
+            </div>
+            ${submission.paymentMethod?.paidByCheque ? `
+            <div class="field">
+              <label>Cheque Number</label>
+              <p>${submission.paymentMethod?.chequeNumber || 'N/A'}</p>
+            </div>
+            <div class="field">
+              <label>Cheque Date</label>
+              <p>${formatDate(submission.paymentMethod?.chequeDate)}</p>
+            </div>
+            ` : ''}
+          </div>
+        </div>
+
+        <div class="section">
+          <h3 class="section-title">Dividend History</h3>
+          <div class="grid">
+            <div class="field">
+              <label>Total Received</label>
+              <p>AED ${formatAmount(submission.dividendHistory?.totalReceived)}</p>
+            </div>
+            <div class="field">
+              <label>Last Received Date</label>
+              <p>${formatDate(submission.dividendHistory?.lastReceivedDate)}</p>
+            </div>
+            <div class="field">
+              <label>Last Amount</label>
+              <p>AED ${formatAmount(submission.dividendHistory?.lastAmount)}</p>
+            </div>
+            <div class="field">
+              <label>Has Pending</label>
+              <p>${submission.dividendHistory?.hasPending ? 'Yes - AED ' + formatAmount(submission.dividendHistory?.pendingAmount) : 'No'}</p>
+            </div>
+          </div>
+        </div>
+
+        ${(submission.remarks?.discrepancies || submission.remarks?.additionalDetails) ? `
+        <div class="section">
+          <h3 class="section-title">Remarks</h3>
+          <div class="grid">
+            ${submission.remarks?.discrepancies ? `
+            <div class="field full-width">
+              <label>Discrepancies</label>
+              <p>${submission.remarks.discrepancies}</p>
+            </div>
+            ` : ''}
+            ${submission.remarks?.additionalDetails ? `
+            <div class="field full-width">
+              <label>Additional Details</label>
+              <p>${submission.remarks.additionalDetails}</p>
+            </div>
+            ` : ''}
+          </div>
+        </div>
+        ` : ''}
+
+        <div class="section">
+          <h3 class="section-title">Declaration</h3>
+          <div class="grid">
+            <div class="field">
+              <label>Declaration Confirmed</label>
+              <p>${submission.declaration?.confirmed ? 'Yes' : 'No'}</p>
+            </div>
+            <div class="field">
+              <label>Digital Signature</label>
+              <p style="font-style: italic;">${submission.declaration?.signature || 'N/A'}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="footer">
+          <p>Generated on ${new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+          <p>Matajar Group - Investor Portal</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    // Open new window for print
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(printHTML);
+    printWindow.document.close();
+
+    // Wait for content to load then print
+    printWindow.onload = () => {
+      printWindow.print();
+    };
+  };
+
   useEffect(() => {
     loadSubmission();
   }, [id]);
@@ -84,7 +389,7 @@ const ViewSubmission = () => {
       <Header />
 
       <main className="form-page-container">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
           <button
             onClick={() => navigate('/dashboard')}
             style={{
@@ -100,15 +405,24 @@ const ViewSubmission = () => {
           >
             <FiArrowLeft /> Back to Dashboard
           </button>
-          {status === 'pending' && (
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
             <button
-              onClick={() => navigate(`/form/${id}`)}
-              className="btn btn-primary"
-              style={{ width: 'auto', padding: '10px 20px' }}
+              onClick={handleDownloadPDF}
+              className="btn btn-secondary"
+              style={{ width: 'auto', padding: '10px 20px', display: 'flex', alignItems: 'center', gap: '8px' }}
             >
-              <FiEdit2 /> Edit Submission
+              <FiDownload /> Download PDF
             </button>
-          )}
+            {status === 'pending' && (
+              <button
+                onClick={() => navigate(`/form/${id}`)}
+                className="btn btn-primary"
+                style={{ width: 'auto', padding: '10px 20px' }}
+              >
+                <FiEdit2 /> Edit Submission
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="form-card">

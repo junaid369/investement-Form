@@ -249,7 +249,6 @@ const InvestmentForm = () => {
       console.error('Error saving draft:', error);
       setSaveStatus('error');
     } finally {
-      setSaving(false);
       setTimeout(() => setSaveStatus(''), 3000);
     }
   }, [formData, id, draftId]);
