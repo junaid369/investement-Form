@@ -4,6 +4,9 @@ const cors = require("cors");
 const multer = require("multer");
 const path = require("path");
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
+const jwt = require("jsonwebtoken");
+const axios = require("axios");
+const https = require("https");
 require("dotenv").config();
 
 const app = express();
@@ -155,11 +158,392 @@ const investorFormSchema = new mongoose.Schema(
 
 const InvestorForm = mongoose.model("InvestorForm", investorFormSchema);
 
+// User Schema for Portal Authentication
+const userSchema = new mongoose.Schema(
+  {
+    fullName: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    phone: { type: String, required: true, unique: true },
+    isVerified: { type: Boolean, default: false },
+    otp: { type: String },
+    otpExpiry: { type: Date },
+  },
+  { timestamps: true }
+);
+
+const User = mongoose.model("User", userSchema);
+
+// JWT Secret
+const JWT_SECRET = process.env.JWT_SECRET || "matajar-investor-portal-secret-key-2024";
+
+// Generate OTP
+function generateOTP() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// Send SMS OTP via MessageKnot
+async function sendSmsOtp(otp, userNumber) {
+  try {
+    const username = process.env.SMS_USERNAME;
+    const password = process.env.SMS_PASSWORD;
+    const senderId = process.env.SMS_SENDER_ID;
+
+    if (!username || !password || !senderId) {
+      console.log("SMS credentials not configured, OTP:", otp);
+      return true; // For testing without SMS
+    }
+
+    const SMS = `Your Matajar Group verification OTP code is ${otp}. Code valid for 10 minutes only, for one time use.`;
+    const reqUrl = `https://sms.messageknot.com:1443/cgi-bin/sendsms?username=${username}&password=${password}&from=${senderId}&to=${userNumber}&text=${encodeURIComponent(SMS)}`;
+
+    const response = await axios.get(reqUrl, {
+      httpsAgent: new https.Agent({ rejectUnauthorized: false }),
+    });
+
+    console.log("SMS sent:", response.data);
+    return true;
+  } catch (error) {
+    console.error("SMS Error:", error.message);
+    return false;
+  }
+}
+
+// JWT Auth Middleware
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+
+  if (!token) {
+    return res.status(401).json({ success: false, message: "Access token required" });
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ success: false, message: "Invalid or expired token" });
+    }
+    req.user = user;
+    next();
+  });
+};
+
 // Routes
 
 // Health check
 app.get("/", (req, res) => {
   res.json({ message: "Investor Form API is running!", storage: "AWS S3" });
+});
+
+// ==================== AUTH ROUTES ====================
+
+// Register new user
+app.post("/api/auth/register", async (req, res) => {
+  try {
+    const { fullName, email, phone } = req.body;
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ $or: [{ email }, { phone }] });
+    if (existingUser) {
+      if (existingUser.email === email) {
+        return res.status(400).json({ success: false, message: "Email already registered" });
+      }
+      return res.status(400).json({ success: false, message: "Phone number already registered" });
+    }
+
+    // Generate OTP
+    const otp = generateOTP();
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // Create user
+    const user = new User({
+      fullName,
+      email,
+      phone,
+      otp,
+      otpExpiry,
+    });
+    await user.save();
+
+    // Send OTP
+    await sendSmsOtp(otp, phone);
+
+    res.json({
+      success: true,
+      message: "Registration successful. OTP sent to your phone.",
+    });
+  } catch (error) {
+    console.error("Register Error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Login - Send OTP
+app.post("/api/auth/login", async (req, res) => {
+  try {
+    const { phone } = req.body;
+
+    const user = await User.findOne({ phone });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found. Please register first." });
+    }
+
+    // Generate OTP
+    const otp = generateOTP();
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    user.otp = otp;
+    user.otpExpiry = otpExpiry;
+    await user.save();
+
+    // Send OTP
+    await sendSmsOtp(otp, phone);
+
+    res.json({
+      success: true,
+      message: "OTP sent to your phone.",
+    });
+  } catch (error) {
+    console.error("Login Error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Send OTP (for resend)
+app.post("/api/auth/send-otp", async (req, res) => {
+  try {
+    const { phone } = req.body;
+
+    const user = await User.findOne({ phone });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // Generate OTP
+    const otp = generateOTP();
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    user.otp = otp;
+    user.otpExpiry = otpExpiry;
+    await user.save();
+
+    // Send OTP
+    await sendSmsOtp(otp, phone);
+
+    res.json({
+      success: true,
+      message: "OTP sent to your phone.",
+    });
+  } catch (error) {
+    console.error("Send OTP Error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Verify OTP
+app.post("/api/auth/verify-otp", async (req, res) => {
+  try {
+    const { phone, otp } = req.body;
+
+    const user = await User.findOne({ phone });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // Check OTP
+    if (user.otp !== otp) {
+      return res.status(400).json({ success: false, message: "Invalid OTP" });
+    }
+
+    // Check expiry
+    if (new Date() > user.otpExpiry) {
+      return res.status(400).json({ success: false, message: "OTP has expired" });
+    }
+
+    // Mark as verified
+    user.isVerified = true;
+    user.otp = null;
+    user.otpExpiry = null;
+    await user.save();
+
+    // Generate JWT
+    const token = jwt.sign(
+      { userId: user._id, phone: user.phone, email: user.email },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.json({
+      success: true,
+      message: "OTP verified successfully",
+      token,
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        phone: user.phone,
+      },
+    });
+  } catch (error) {
+    console.error("Verify OTP Error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ==================== USER SUBMISSION ROUTES ====================
+
+// Get user's submissions
+app.get("/api/user/submissions", authenticateToken, async (req, res) => {
+  try {
+    const { page = 1, limit = 10, search = "" } = req.query;
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
+
+    // Get user's phone/email for filtering
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // Build query - filter by user's phone or email
+    let query = {
+      $or: [
+        { "personalInfo.phone": user.phone },
+        { "personalInfo.email": user.email },
+      ],
+    };
+
+    // Add search filter
+    if (search) {
+      query.$and = [
+        {
+          $or: [
+            { "personalInfo.fullName": { $regex: search, $options: "i" } },
+            { courtAgreementNumber: { $regex: search, $options: "i" } },
+          ],
+        },
+      ];
+    }
+
+    const totalCount = await InvestorForm.countDocuments(query);
+    const totalPages = Math.ceil(totalCount / limitNum);
+
+    const submissions = await InvestorForm.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNum);
+
+    // Get all submissions for stats
+    const allSubmissions = await InvestorForm.find({
+      $or: [
+        { "personalInfo.phone": user.phone },
+        { "personalInfo.email": user.email },
+      ],
+    });
+
+    res.json({
+      success: true,
+      submissions,
+      allSubmissions,
+      total: totalCount,
+      totalPages,
+      currentPage: pageNum,
+    });
+  } catch (error) {
+    console.error("Get User Submissions Error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Get single user submission
+app.get("/api/user/submissions/:id", authenticateToken, async (req, res) => {
+  try {
+    const submission = await InvestorForm.findById(req.params.id);
+    if (!submission) {
+      return res.status(404).json({ success: false, message: "Submission not found" });
+    }
+
+    // Verify ownership
+    const user = await User.findById(req.user.userId);
+    if (
+      submission.personalInfo.phone !== user.phone &&
+      submission.personalInfo.email !== user.email
+    ) {
+      return res.status(403).json({ success: false, message: "Access denied" });
+    }
+
+    res.json({ success: true, submission });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Delete user submission (only pending/draft)
+app.delete("/api/user/submissions/:id", authenticateToken, async (req, res) => {
+  try {
+    const submission = await InvestorForm.findById(req.params.id);
+    if (!submission) {
+      return res.status(404).json({ success: false, message: "Submission not found" });
+    }
+
+    // Verify ownership
+    const user = await User.findById(req.user.userId);
+    if (
+      submission.personalInfo.phone !== user.phone &&
+      submission.personalInfo.email !== user.email
+    ) {
+      return res.status(403).json({ success: false, message: "Access denied" });
+    }
+
+    // Only allow deleting pending/draft submissions
+    if (submission.status === "verified") {
+      return res.status(400).json({ success: false, message: "Cannot delete verified submissions" });
+    }
+
+    await InvestorForm.findByIdAndDelete(req.params.id);
+    res.json({ success: true, message: "Submission deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Save draft
+app.post("/api/user/submissions/draft", authenticateToken, async (req, res) => {
+  try {
+    const formData = req.body;
+    formData.status = "draft";
+
+    const newForm = new InvestorForm(formData);
+    await newForm.save();
+
+    res.json({ success: true, message: "Draft saved", submission: newForm });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Update draft
+app.put("/api/user/submissions/draft/:id", authenticateToken, async (req, res) => {
+  try {
+    const submission = await InvestorForm.findById(req.params.id);
+    if (!submission) {
+      return res.status(404).json({ success: false, message: "Submission not found" });
+    }
+
+    // Only update drafts or pending
+    if (submission.status === "verified") {
+      return res.status(400).json({ success: false, message: "Cannot edit verified submissions" });
+    }
+
+    const updatedSubmission = await InvestorForm.findByIdAndUpdate(
+      req.params.id,
+      { ...req.body, status: "draft" },
+      { new: true }
+    );
+
+    res.json({ success: true, message: "Draft updated", submission: updatedSubmission });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 });
 
 // Submit form with file uploads to S3
