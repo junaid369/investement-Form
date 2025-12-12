@@ -127,7 +127,7 @@ const Register = () => {
 
     try {
       const fullPhone = formData.phoneCode + formData.phone;
-      const response = await authAPI.sendOtp(fullPhone);
+      const response = await authAPI.sendOtp(fullPhone, 'register');
 
       if (response.data.success) {
         setTimer(120);
