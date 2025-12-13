@@ -259,6 +259,9 @@ async function sendSmsOtp(otp, userNumber) {
 // Send Email OTP (for international numbers)
 async function sendEmailOtp(otp, email, userName = "Investor") {
   try {
+    console.log("Preparing to send Email OTP to:", email);
+    console.log("Using SMTP User:", process.env.SMTP_USER);
+    console.log("Using SMTP Pass:", process.env.SMTP_PASS ? "Configured" : "Not Configured");
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
       console.log("Email credentials not configured, OTP:", otp, "Email:", email);
       return true; // For testing without email
