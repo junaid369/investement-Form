@@ -290,41 +290,16 @@ function getOtpEmailHtml(otp, userName) {
   `;
 }
 
-// Send Email OTP using Resend API via HTTP (works on servers that block SMTP)
-async function sendEmailWithResend(otp, email, userName) {
+// Send Email OTP (for international numbers)
+async function sendEmailOtp(otp, email, userName = "Investor") {
   try {
-    console.log("Sending email via Resend HTTP API to:", email);
+    console.log("Sending Email OTP to:", email);
 
-    const fromEmail = process.env.RESEND_FROM_EMAIL || "Matajar Group <onboarding@resend.dev>";
+    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+      console.log("Email credentials not configured, OTP:", otp, "Email:", email);
+      return true;
+    }
 
-    const response = await axios.post(
-      "https://api.resend.com/emails",
-      {
-        from: fromEmail,
-        to: email,
-        subject: "Matajar Group - Your Verification Code",
-        html: getOtpEmailHtml(otp, userName),
-      },
-      {
-        headers: {
-          "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        timeout: 30000, // 30 seconds
-      }
-    );
-
-    console.log("Email sent via Resend, ID:", response.data.id);
-    return true;
-  } catch (error) {
-    console.error("Resend Error:", error.response?.data || error.message);
-    return false;
-  }
-}
-
-// Send Email OTP using Nodemailer (for local development)
-async function sendEmailWithNodemailer(otp, email, userName) {
-  try {
     const transporter = createEmailTransporter();
 
     const mailOptions = {
@@ -335,35 +310,8 @@ async function sendEmailWithNodemailer(otp, email, userName) {
     };
 
     const result = await transporter.sendMail(mailOptions);
-    console.log("Email OTP sent via Nodemailer to:", email, "MessageId:", result.messageId);
+    console.log("Email OTP sent to:", email, "MessageId:", result.messageId);
     return true;
-  } catch (error) {
-    console.error("Nodemailer Error:", error.message);
-    return false;
-  }
-}
-
-// Send Email OTP (for international numbers)
-// Uses Resend API if configured (for production), falls back to Nodemailer (for local)
-async function sendEmailOtp(otp, email, userName = "Investor") {
-  try {
-    console.log("Preparing to send Email OTP to:", email);
-
-    // Try Resend API first (works on servers that block SMTP)
-    if (process.env.RESEND_API_KEY) {
-      console.log("Using Resend HTTP API for email delivery");
-      return await sendEmailWithResend(otp, email, userName);
-    }
-
-    // Fall back to Nodemailer (for local development)
-    if (process.env.SMTP_USER && process.env.SMTP_PASS) {
-      console.log("Using Nodemailer (SMTP) for email delivery");
-      return await sendEmailWithNodemailer(otp, email, userName);
-    }
-
-    // No email service configured
-    console.log("No email service configured, OTP:", otp, "Email:", email);
-    return true; // For testing without email
   } catch (error) {
     console.error("Email Error:", error.message);
     return false;
