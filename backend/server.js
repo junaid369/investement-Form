@@ -211,12 +211,21 @@ function generateOTP() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-// Email Transporter Configuration - using Gmail with SSL on port 465
+// Email Transporter Configuration - GoDaddy SMTP
 function createEmailTransporter() {
+  // GoDaddy SMTP settings
+  // For Workspace Email: smtpout.secureserver.net
+  // For Microsoft 365: smtp.office365.com
+  const host = process.env.SMTP_HOST || 'smtpout.secureserver.net';
+  const port = parseInt(process.env.SMTP_PORT) || 465;
+  const secure = port === 465; // true for 465, false for 587
+
+  console.log('Email Config:', { host, port, secure, user: process.env.SMTP_USER });
+
   return nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true, // Use SSL
+    host: host,
+    port: port,
+    secure: secure,
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
@@ -224,7 +233,7 @@ function createEmailTransporter() {
     tls: {
       rejectUnauthorized: false
     },
-    connectionTimeout: 30000, // 30 seconds
+    connectionTimeout: 30000,
     greetingTimeout: 30000,
     socketTimeout: 30000,
   });
