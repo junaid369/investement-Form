@@ -7,6 +7,7 @@ const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const jwt = require("jsonwebtoken");
 const axios = require("axios");
 const https = require("https");
+const nodemailer = require("nodemailer");
 require("dotenv").config();
 
 const app = express();
@@ -182,10 +183,12 @@ const User = mongoose.model("User", userSchema);
 const otpSchema = new mongoose.Schema(
   {
     phone: { type: String, required: true, index: true },
+    email: { type: String, index: true }, // Store email for international users
     otp: { type: String, required: true },
     isVerified: { type: Boolean, default: false },
     expiresAt: { type: Date, required: true },
     purpose: { type: String, enum: ["register", "login"], required: true },
+    otpMethod: { type: String, enum: ["sms", "email"], default: "sms" }, // Track how OTP was sent
     // Store registration data temporarily until OTP is verified
     tempUserData: {
       fullName: { type: String },
@@ -208,7 +211,25 @@ function generateOTP() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-// Send SMS OTP via MessageKnot
+// Email Transporter Configuration
+const emailTransporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || "smtp.gmail.com",
+  port: parseInt(process.env.SMTP_PORT) || 587,
+  secure: false, // true for 465, false for other ports
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
+
+// Check if phone is UAE number (+971)
+function isUAENumber(phone) {
+  // Remove all non-digit characters except +
+  const cleanPhone = phone.replace(/[^\d+]/g, "");
+  return cleanPhone.startsWith("+971") || cleanPhone.startsWith("971") || cleanPhone.startsWith("00971");
+}
+
+// Send SMS OTP via MessageKnot (for UAE numbers only)
 async function sendSmsOtp(otp, userNumber) {
   try {
     const username = process.env.SMS_USERNAME;
@@ -232,6 +253,64 @@ async function sendSmsOtp(otp, userNumber) {
   } catch (error) {
     console.error("SMS Error:", error.message);
     return false;
+  }
+}
+
+// Send Email OTP (for international numbers)
+async function sendEmailOtp(otp, email, userName = "Investor") {
+  try {
+    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+      console.log("Email credentials not configured, OTP:", otp, "Email:", email);
+      return true; // For testing without email
+    }
+
+    const mailOptions = {
+      from: `"Matajar Group" <${process.env.SMTP_USER}>`,
+      to: email,
+      subject: "Matajar Group - Your Verification Code",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #1a3a2a 0%, #2d5a3d 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="color: #d4af37; margin: 0; font-size: 28px;">Matajar Group</h1>
+            <p style="color: #fff; margin: 10px 0 0 0; font-size: 14px;">Investor Portal</p>
+          </div>
+          <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
+            <p style="color: #333; font-size: 16px;">Dear ${userName},</p>
+            <p style="color: #555; font-size: 14px;">Your verification code for Matajar Group Investor Portal is:</p>
+            <div style="background: #1a3a2a; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
+              <span style="color: #d4af37; font-size: 32px; font-weight: bold; letter-spacing: 8px;">${otp}</span>
+            </div>
+            <p style="color: #555; font-size: 14px;">This code is valid for <strong>10 minutes</strong> only.</p>
+            <p style="color: #888; font-size: 12px; margin-top: 30px;">If you did not request this code, please ignore this email.</p>
+            <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+            <p style="color: #888; font-size: 11px; text-align: center;">
+              Matajar Group - Investor Portal<br>
+              This is an automated message. Please do not reply.
+            </p>
+          </div>
+        </div>
+      `,
+    };
+
+    await emailTransporter.sendMail(mailOptions);
+    console.log("Email OTP sent to:", email);
+    return true;
+  } catch (error) {
+    console.error("Email Error:", error.message);
+    return false;
+  }
+}
+
+// Send OTP based on phone number (UAE = SMS, International = Email)
+async function sendOtp(otp, phone, email, userName = "Investor") {
+  if (isUAENumber(phone)) {
+    // UAE number - send SMS
+    await sendSmsOtp(otp, phone);
+    return { method: "sms", destination: phone };
+  } else {
+    // International number - send Email
+    await sendEmailOtp(otp, email, userName);
+    return { method: "email", destination: email };
   }
 }
 
@@ -294,33 +373,82 @@ app.get("/", (req, res) => {
 
 // ==================== AUTH ROUTES ====================
 
+
+//  SENDER_EMAIL="hr.momsandwives@gmail.com"
+//     SOURCE="info@momsandwives.com"
+//     APP_PASSWD="hfdl zasy euul jipr"
 // Register new user - Step 1: Send OTP (user created after verification)
 app.post("/api/auth/register", async (req, res) => {
   try {
     const { fullName, email, phone } = req.body;
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ $or: [{ email }, { phone }] });
-    if (existingUser) {
-      if (existingUser.email === email) {
-        return res.status(400).json({ success: false, message: "Email already registered" });
-      }
-      return res.status(400).json({ success: false, message: "Phone number already registered" });
+    // Validate required fields
+    if (!fullName || !email || !phone) {
+      return res.status(400).json({ success: false, message: "Full name, email, and phone are required" });
     }
 
-    // Get or create OTP - store temp user data
-    const { otp, isExisting } = await getOrCreateOTP(phone, "register", { fullName, email });
+    // Normalize email to lowercase for comparison
+    const normalizedEmail = email.toLowerCase().trim();
 
-    // Only send SMS if new OTP was created
-    if (!isExisting) {
-      await sendSmsOtp(otp, phone);
+    // Check if user already exists (check both email and phone separately for clear error messages)
+    const existingEmailUser = await User.findOne({ email: { $regex: new RegExp(`^${normalizedEmail}$`, 'i') } });
+    if (existingEmailUser) {
+      return res.status(400).json({ success: false, message: "This email is already registered. Please use a different email or login." });
     }
+
+    const existingPhoneUser = await User.findOne({ phone });
+    if (existingPhoneUser) {
+      return res.status(400).json({ success: false, message: "This phone number is already registered. Please use a different number or login." });
+    }
+
+    // Check for existing valid OTP
+    const existingOtp = await OTP.findOne({
+      phone,
+      isVerified: false,
+      expiresAt: { $gt: new Date() },
+      purpose: "register",
+    });
+
+    if (existingOtp) {
+      // Return existing OTP method info
+      const isUAE = isUAENumber(phone);
+      return res.json({
+        success: true,
+        message: isUAE
+          ? "OTP already sent to your phone. Please enter the OTP to verify."
+          : `OTP already sent to your email (${normalizedEmail}). Please check your inbox.`,
+        otpMethod: isUAE ? "sms" : "email",
+        destination: isUAE ? phone : normalizedEmail,
+      });
+    }
+
+    // Create new OTP
+    const newOtpCode = generateOTP();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const isUAE = isUAENumber(phone);
+
+    const otpDoc = new OTP({
+      phone,
+      email: normalizedEmail,
+      otp: newOtpCode,
+      isVerified: false,
+      expiresAt,
+      purpose: "register",
+      otpMethod: isUAE ? "sms" : "email",
+      tempUserData: { fullName, email: normalizedEmail },
+    });
+    await otpDoc.save();
+
+    // Send OTP based on location
+    const otpResult = await sendOtp(newOtpCode, phone, normalizedEmail, fullName);
 
     res.json({
       success: true,
-      message: isExisting
-        ? "OTP already sent. Please enter the OTP to verify."
-        : "OTP sent to your phone. Please verify to complete registration.",
+      message: otpResult.method === "sms"
+        ? "OTP sent to your phone via SMS. Please verify to complete registration."
+        : `OTP sent to your email (${normalizedEmail}). Please check your inbox and spam folder.`,
+      otpMethod: otpResult.method,
+      destination: otpResult.destination,
     });
   } catch (error) {
     console.error("Register Error:", error);
@@ -338,19 +466,53 @@ app.post("/api/auth/login", async (req, res) => {
       return res.status(404).json({ success: false, message: "User not found. Please register first." });
     }
 
-    // Get or create OTP for login
-    const { otp, isExisting } = await getOrCreateOTP(phone, "login");
+    // Check for existing valid OTP
+    const existingOtp = await OTP.findOne({
+      phone,
+      isVerified: false,
+      expiresAt: { $gt: new Date() },
+      purpose: "login",
+    });
 
-    // Only send SMS if new OTP was created
-    if (!isExisting) {
-      await sendSmsOtp(otp, phone);
+    if (existingOtp) {
+      // Return existing OTP method info
+      const isUAE = isUAENumber(phone);
+      return res.json({
+        success: true,
+        message: isUAE
+          ? "OTP already sent to your phone. Please enter the OTP to verify."
+          : `OTP already sent to your email (${user.email}). Please check your inbox.`,
+        otpMethod: isUAE ? "sms" : "email",
+        destination: isUAE ? phone : user.email,
+      });
     }
+
+    // Create new OTP
+    const newOtpCode = generateOTP();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const isUAE = isUAENumber(phone);
+
+    const otpDoc = new OTP({
+      phone,
+      email: user.email,
+      otp: newOtpCode,
+      isVerified: false,
+      expiresAt,
+      purpose: "login",
+      otpMethod: isUAE ? "sms" : "email",
+    });
+    await otpDoc.save();
+
+    // Send OTP based on location
+    const otpResult = await sendOtp(newOtpCode, phone, user.email, user.fullName);
 
     res.json({
       success: true,
-      message: isExisting
-        ? "OTP already sent. Please enter the OTP to verify."
-        : "OTP sent to your phone.",
+      message: otpResult.method === "sms"
+        ? "OTP sent to your phone via SMS."
+        : `OTP sent to your email (${user.email}). Please check your inbox and spam folder.`,
+      otpMethod: otpResult.method,
+      destination: otpResult.destination,
     });
   } catch (error) {
     console.error("Login Error:", error);
@@ -363,12 +525,34 @@ app.post("/api/auth/send-otp", async (req, res) => {
   try {
     const { phone, purpose = "login" } = req.body;
 
-    // For login purpose, check if user exists
+    let userEmail = null;
+    let userName = "Investor";
+
+    // For login purpose, check if user exists and get email
     if (purpose === "login") {
       const user = await User.findOne({ phone });
       if (!user) {
         return res.status(404).json({ success: false, message: "User not found" });
       }
+      userEmail = user.email;
+      userName = user.fullName;
+    }
+
+    // Get temp user data from old OTP if it's for registration
+    let tempUserData = null;
+    if (purpose === "register") {
+      const oldOtp = await OTP.findOne({ phone, purpose: "register" }).sort({ createdAt: -1 });
+      if (oldOtp && oldOtp.tempUserData) {
+        tempUserData = oldOtp.tempUserData;
+        userEmail = oldOtp.tempUserData.email;
+        userName = oldOtp.tempUserData.fullName;
+      }
+    }
+
+    // For international users, email is required
+    const isUAE = isUAENumber(phone);
+    if (!isUAE && !userEmail) {
+      return res.status(400).json({ success: false, message: "Email is required for international users. Please register again." });
     }
 
     // Invalidate any existing OTPs for this phone and purpose
@@ -381,31 +565,28 @@ app.post("/api/auth/send-otp", async (req, res) => {
     const newOtpCode = generateOTP();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-    // Get temp user data from old OTP if it's for registration
-    let tempUserData = null;
-    if (purpose === "register") {
-      const oldOtp = await OTP.findOne({ phone, purpose: "register" }).sort({ createdAt: -1 });
-      if (oldOtp && oldOtp.tempUserData) {
-        tempUserData = oldOtp.tempUserData;
-      }
-    }
-
     const otpDoc = new OTP({
       phone,
+      email: userEmail,
       otp: newOtpCode,
       isVerified: false,
       expiresAt,
       purpose,
+      otpMethod: isUAE ? "sms" : "email",
       tempUserData,
     });
     await otpDoc.save();
 
-    // Send SMS
-    await sendSmsOtp(newOtpCode, phone);
+    // Send OTP based on location
+    const otpResult = await sendOtp(newOtpCode, phone, userEmail, userName);
 
     res.json({
       success: true,
-      message: "New OTP sent to your phone.",
+      message: otpResult.method === "sms"
+        ? "New OTP sent to your phone via SMS."
+        : `New OTP sent to your email (${userEmail}). Please check your inbox and spam folder.`,
+      otpMethod: otpResult.method,
+      destination: otpResult.destination,
     });
   } catch (error) {
     console.error("Send OTP Error:", error);

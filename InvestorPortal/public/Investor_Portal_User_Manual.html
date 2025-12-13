@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Matajar Group - Investor Portal User Manual</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+    :root {
+      --primary-dark: #0d1f17;
+      --primary-green: #1a3a2a;
+      --secondary-green: #2d5a3d;
+      --gold: #d4af37;
+      --gold-light: #e8d48a;
+      --text-light: #f5f5f5;
+      --text-muted: #a0a0a0;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    @page {
+      size: A4;
+      margin: 0;
+    }
+
+    body {
+      font-family: 'Poppins', 'Segoe UI', sans-serif;
+      line-height: 1.5;
+      color: #333;
+      background: #fff;
+      font-size: 10pt;
+    }
+
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      padding: 12mm 15mm 15mm 15mm;
+      margin: 0 auto;
+      background: #fff;
+      page-break-after: always;
+      position: relative;
+    }
+
+    /* Cover Page */
+    .cover-page {
+      background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-green) 50%, var(--secondary-green) 100%);
+      color: var(--text-light);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 0;
+      height: 297mm;
+    }
+
+    .cover-logo {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 40px rgba(212, 175, 55, 0.3);
+    }
+
+    .cover-logo span {
+      font-size: 34px;
+      font-weight: 700;
+      color: var(--primary-dark);
+    }
+
+    .cover-title {
+      font-size: 28pt;
+      font-weight: 700;
+      color: var(--gold);
+      margin-bottom: 5px;
+      letter-spacing: 2px;
+    }
+
+    .cover-subtitle {
+      font-size: 13pt;
+      color: var(--text-light);
+      margin-bottom: 35px;
+      opacity: 0.9;
+    }
+
+    .cover-doc-title {
+      font-size: 22pt;
+      font-weight: 600;
+      color: #fff;
+      border: 3px solid var(--gold);
+      padding: 15px 45px;
+      margin: 20px 0;
+      letter-spacing: 3px;
+    }
+
+    .cover-description {
+      font-size: 10pt;
+      color: var(--text-muted);
+      max-width: 350px;
+      margin-top: 18px;
+      line-height: 1.6;
+    }
+
+    .cover-footer {
+      position: absolute;
+      bottom: 20mm;
+      text-align: center;
+      width: 100%;
+      left: 0;
+    }
+
+    .cover-footer p {
+      color: var(--text-muted);
+      font-size: 9pt;
+      margin-bottom: 3px;
+    }
+
+    .cover-footer .version {
+      color: var(--gold);
+      font-weight: 500;
+      margin-top: 6px;
+    }
+
+    /* Page Header */
+    .page-header {
+      background: linear-gradient(90deg, var(--primary-green), var(--secondary-green));
+      color: var(--gold);
+      padding: 10px 18px;
+      margin: -12mm -15mm 15px -15mm;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .page-header h4 {
+      font-size: 9pt;
+      font-weight: 500;
+    }
+
+    .page-header .page-num {
+      background: var(--gold);
+      color: var(--primary-dark);
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 8pt;
+    }
+
+    /* Typography */
+    h1 {
+      color: var(--primary-green);
+      font-size: 15pt;
+      font-weight: 700;
+      margin-bottom: 10px;
+      padding-bottom: 5px;
+      border-bottom: 2px solid var(--gold);
+      display: inline-block;
+    }
+
+    h2 {
+      color: var(--secondary-green);
+      font-size: 11pt;
+      font-weight: 600;
+      margin: 12px 0 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    h2::before {
+      content: '';
+      width: 5px;
+      height: 5px;
+      background: var(--gold);
+      border-radius: 50%;
+    }
+
+    p {
+      margin-bottom: 6px;
+      text-align: justify;
+      color: #444;
+    }
+
+    /* Table of Contents */
+    .toc-container {
+      background: linear-gradient(135deg, #f8f9fa 0%, #fff 100%);
+      border: 2px solid var(--gold);
+      border-radius: 10px;
+      padding: 15px 20px;
+      margin: 12px 0;
+    }
+
+    .toc-title {
+      text-align: center;
+      color: var(--primary-green);
+      font-size: 14pt;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--gold);
+    }
+
+    .toc-list {
+      list-style: none;
+    }
+
+    .toc-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 7px 10px;
+      border-bottom: 1px dashed #ddd;
+      font-size: 9.5pt;
+    }
+
+    .toc-list li:last-child {
+      border-bottom: none;
+    }
+
+    .toc-list .toc-number {
+      background: var(--gold);
+      color: var(--primary-dark);
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 8pt;
+      margin-right: 8px;
+    }
+
+    .toc-list .toc-page {
+      background: var(--primary-green);
+      color: #fff;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 7pt;
+      font-weight: 500;
+    }
+
+    /* Step Boxes */
+    .step-box {
+      background: linear-gradient(135deg, #f0f7f4 0%, #fff 100%);
+      border-left: 3px solid var(--gold);
+      border-radius: 0 6px 6px 0;
+      padding: 8px 12px;
+      margin: 6px 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .step-number {
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      color: var(--primary-dark);
+      width: 22px;
+      height: 22px;
+      min-width: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 10pt;
+    }
+
+    .step-content {
+      flex: 1;
+      font-size: 9pt;
+    }
+
+    /* Alert Boxes */
+    .alert-box {
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin: 8px 0;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 9pt;
+    }
+
+    .alert-box .alert-icon {
+      font-size: 12pt;
+      line-height: 1;
+    }
+
+    .alert-warning {
+      background: linear-gradient(135deg, #fff8e6 0%, #fff 100%);
+      border-left: 3px solid #f0ad4e;
+    }
+
+    .alert-info {
+      background: linear-gradient(135deg, #e8f4fc 0%, #fff 100%);
+      border-left: 3px solid #5bc0de;
+    }
+
+    .alert-success {
+      background: linear-gradient(135deg, #e8f5e9 0%, #fff 100%);
+      border-left: 3px solid #5cb85c;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 8px 0;
+      font-size: 8.5pt;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    th {
+      background: linear-gradient(135deg, var(--primary-green), var(--secondary-green));
+      color: var(--gold);
+      padding: 7px 10px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 8.5pt;
+    }
+
+    td {
+      padding: 6px 10px;
+      border-bottom: 1px solid #eee;
+      color: #444;
+    }
+
+    tr:nth-child(even) {
+      background: #f9fafb;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Status Badges */
+    .status {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 7.5pt;
+      font-weight: 600;
+    }
+
+    .status-draft { background: #6c757d; color: #fff; }
+    .status-pending { background: var(--gold); color: var(--primary-dark); }
+    .status-verified { background: #28a745; color: #fff; }
+    .status-rejected { background: #dc3545; color: #fff; }
+
+    /* Lists */
+    ul, ol {
+      margin: 6px 0 6px 18px;
+      color: #444;
+    }
+
+    li {
+      margin-bottom: 4px;
+      font-size: 9pt;
+    }
+
+    li::marker {
+      color: var(--gold);
+    }
+
+    /* FAQ */
+    .faq-item {
+      background: #f8f9fa;
+      border-radius: 6px;
+      padding: 8px 12px;
+      margin: 6px 0;
+      border-left: 3px solid var(--gold);
+    }
+
+    .faq-q {
+      color: var(--primary-green);
+      font-weight: 600;
+      margin-bottom: 3px;
+      font-size: 9pt;
+    }
+
+    .faq-a {
+      color: #555;
+      padding-left: 6px;
+      border-left: 2px solid #ddd;
+      margin-left: 3px;
+      font-size: 8.5pt;
+    }
+
+    /* Footer */
+    .page-footer {
+      position: absolute;
+      bottom: 8mm;
+      left: 15mm;
+      right: 15mm;
+      text-align: center;
+      padding-top: 8px;
+      border-top: 1px solid #eee;
+      font-size: 7.5pt;
+      color: #888;
+    }
+
+    .final-footer {
+      background: linear-gradient(135deg, var(--primary-green), var(--secondary-green));
+      color: var(--text-light);
+      padding: 20px;
+      margin: 15px -15mm -15mm -15mm;
+      text-align: center;
+    }
+
+    .final-footer h3 {
+      color: var(--gold);
+      font-size: 13pt;
+      margin-bottom: 6px;
+    }
+
+    .final-footer p {
+      color: var(--text-muted);
+      text-align: center;
+      margin-bottom: 3px;
+      font-size: 9pt;
+    }
+
+    strong {
+      color: var(--primary-green);
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .compact-table td, .compact-table th {
+      padding: 5px 8px;
+    }
+
+    .section-spacer {
+      margin-top: 15px;
+    }
+
+    @media print {
+      body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .page {
+        margin: 0;
+        box-shadow: none;
+        page-break-inside: avoid;
+      }
+      .page-header, .alert-box, .step-box, .faq-item, table, .toc-container {
+        page-break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Page 1: Cover -->
+  <div class="page cover-page">
+    <div class="cover-logo">
+      <span>MG</span>
+    </div>
+    <h1 class="cover-title">MATAJAR GROUP</h1>
+    <p class="cover-subtitle">Investor Portal</p>
+    <div class="cover-doc-title">USER MANUAL</div>
+    <p class="cover-description">
+      A complete guide for investors to submit and track investment history details through the Investor Portal
+    </p>
+    <div class="cover-footer">
+      <p>Legal Review & Settlement Processing Division</p>
+      <p>Powered by Mirage by MAG Investments LLC</p>
+      <p class="version">Version 1.0 | December 2025</p>
+    </div>
+  </div>
+
+  <!-- Page 2: Table of Contents -->
+  <div class="page">
+    <div class="page-header">
+      <h4>Matajar Group - Investor Portal</h4>
+      <div class="page-num">2</div>
+    </div>
+
+    <div class="toc-container">
+      <h2 class="toc-title">Table of Contents</h2>
+      <ul class="toc-list">
+        <li><span><span class="toc-number">1</span> Introduction</span> <span class="toc-page">Page 3</span></li>
+        <li><span><span class="toc-number">2</span> Getting Started</span> <span class="toc-page">Page 3</span></li>
+        <li><span><span class="toc-number">3</span> Registration Process</span> <span class="toc-page">Page 4</span></li>
+        <li><span><span class="toc-number">4</span> Login Process</span> <span class="toc-page">Page 4</span></li>
+        <li><span><span class="toc-number">5</span> Dashboard Overview</span> <span class="toc-page">Page 5</span></li>
+        <li><span><span class="toc-number">6</span> Creating New Submission</span> <span class="toc-page">Page 5</span></li>
+        <li><span><span class="toc-number">7</span> Form Sections Guide</span> <span class="toc-page">Page 6-7</span></li>
+        <li><span><span class="toc-number">8</span> Managing Submissions</span> <span class="toc-page">Page 8</span></li>
+        <li><span><span class="toc-number">9</span> Understanding Status</span> <span class="toc-page">Page 8</span></li>
+        <li><span><span class="toc-number">10</span> FAQ & Support</span> <span class="toc-page">Page 9</span></li>
+      </ul>
+    </div>
+
+    <div class="section-spacer">
+      <h1>About This Manual</h1>
+      <p>This user manual provides comprehensive guidance on using the Matajar Group Investor Portal.</p>
+
+      <h2>Who Should Use This Manual</h2>
+      <ul>
+        <li>Investors who need to submit their investment history details</li>
+        <li>Users who want to track their submission status</li>
+        <li>Anyone requiring assistance with the portal features</li>
+      </ul>
+
+      <h2>Document Conventions</h2>
+      <div class="alert-box alert-info">
+        <span class="alert-icon">ℹ</span>
+        <div><strong>Info boxes</strong> provide helpful tips and additional information.</div>
+      </div>
+      <div class="alert-box alert-warning">
+        <span class="alert-icon">⚠</span>
+        <div><strong>Warning boxes</strong> highlight important notes and cautions.</div>
+      </div>
+      <div class="alert-box alert-success">
+        <span class="alert-icon">✓</span>
+        <div><strong>Success boxes</strong> indicate successful actions or confirmations.</div>
+      </div>
+    </div>
+
+    <div class="page-footer">Matajar Group Investor Portal - User Manual</div>
+  </div>
+
+  <!-- Page 3: Introduction & Getting Started -->
+  <div class="page">
+    <div class="page-header">
+      <h4>Matajar Group - Investor Portal</h4>
+      <div class="page-num">3</div>
+    </div>
+
+    <h1>1. Introduction</h1>
+    <p>Welcome to the <strong>Matajar Group Investor Portal</strong>. This portal helps investors submit and track their investment history details as part of the legal review and settlement processing.</p>
+
+    <h2>Purpose of This Portal</h2>
+    <p>As part of the final legal and audit process, all investors are required to verify their investment details and submit supporting documents. This information is essential for:</p>
+    <ul>
+      <li>Preparing your settlement file</li>
+      <li>Generating your investor login credentials</li>
+      <li>Processing your investment claims</li>
+      <li>Maintaining accurate records</li>
+    </ul>
+
+    <div class="alert-box alert-info">
+      <span class="alert-icon">ℹ</span>
+      <div><strong>Important:</strong> Please complete the form accurately to avoid delays in processing your settlement.</div>
+    </div>
+
+    <h1 class="section-spacer">2. Getting Started</h1>
+
+    <div class="two-col">
+      <div>
+        <h2>System Requirements</h2>
+        <ul>
+          <li>Modern web browser (Chrome, Firefox, Safari, Edge)</li>
+          <li>Stable internet connection</li>
+          <li>Valid phone number for OTP</li>
+          <li>Email address</li>
+        </ul>
+      </div>
+      <div>
+        <h2>Portal URL</h2>
+        <div class="step-box">
+          <div class="step-number">→</div>
+          <div class="step-content"><strong>https://investors.dailyneeds.ai</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <h2>Documents You Will Need</h2>
+    <table class="compact-table">
+      <tr>
+        <th>Document</th>
+        <th>Required</th>
+        <th>Format</th>
+        <th>Max Size</th>
+      </tr>
+      <tr>
+        <td>Investment Agreement/Contract Copy</td>
+        <td><strong>Yes</strong></td>
+        <td>PDF, JPG, PNG</td>
+        <td>10MB</td>
+      </tr>
+      <tr>
+        <td>Payment Receipt/Proof</td>
+        <td><strong>Yes</strong></td>
+        <td>PDF, JPG, PNG</td>
+        <td>10MB</td>
+      </tr>
+      <tr>
+        <td>Dividend Payment Receipts</td>
+        <td>Optional</td>
+        <td>PDF, JPG, PNG</td>
+        <td>10MB</td>
+      </tr>
+      <tr>
+        <td>Other Related Documents</td>
+        <td>Optional</td>
+        <td>PDF, JPG, PNG</td>
+        <td>10MB</td>
+      </tr>
+    </table>
+
+    <div class="page-footer">Matajar Group Investor Portal - User Manual</div>
+  </div>
+
+  <!-- Page 4: Registration & Login -->
+  <div class="page">
+    <div class="page-header">
+      <h4>Matajar Group - Investor Portal</h4>
+      <div class="page-num">4</div>
+    </div>
+
+    <h1>3. Registration Process</h1>
+    <p>New users must register before accessing the portal. Follow these steps:</p>
+
+    <div class="two-col">
+      <div>
+        <div class="step-box"><div class="step-number">1</div><div class="step-content">Click <strong>"Register"</strong> on login page</div></div>
+        <div class="step-box"><div class="step-number">2</div><div class="step-content">Enter your <strong>Full Name</strong></div></div>
+        <div class="step-box"><div class="step-number">3</div><div class="step-content">Enter your <strong>Email Address</strong></div></div>
+        <div class="step-box"><div class="step-number">4</div><div class="step-content">Select <strong>Country Code</strong> + <strong>Phone</strong></div></div>
+      </div>
+      <div>
+        <div class="step-box"><div class="step-number">5</div><div class="step-content">Click <strong>"Send OTP"</strong></div></div>
+        <div class="step-box"><div class="step-number">6</div><div class="step-content">Enter <strong>6-digit OTP</strong></div></div>
+        <div class="step-box"><div class="step-number">7</div><div class="step-content">Click <strong>"Verify & Register"</strong></div></div>
+      </div>
+    </div>
+
+    <div class="alert-box alert-info">
+      <span class="alert-icon">ℹ</span>
+      <div><strong>OTP Delivery:</strong> UAE numbers (+971) receive OTP via <strong>SMS</strong>. International numbers receive OTP via <strong>Email</strong>.</div>
+    </div>
+
+    <h2>Supported Country Codes</h2>
+    <table class="compact-table">
+      <tr><th>Country</th><th>Code</th><th>OTP Method</th><th>Country</th><th>Code</th><th>OTP Method</th></tr>
+      <tr><td>UAE</td><td>+971</td><td><strong>SMS</strong></td><td>India</td><td>+91</td><td>Email</td></tr>
+      <tr><td>Saudi Arabia</td><td>+966</td><td>Email</td><td>Qatar</td><td>+974</td><td>Email</td></tr>
+      <tr><td>Kuwait</td><td>+965</td><td>Email</td><td>Bahrain</td><td>+973</td><td>Email</td></tr>
+      <tr><td>Oman</td><td>+968</td><td>Email</td><td>UK</td><td>+44</td><td>Email</td></tr>
+      <tr><td>USA</td><td>+1</td><td>Email</td><td></td><td></td><td></td></tr>
+    </table>
+
+    <h1 class="section-spacer">4. Login Process</h1>
+    <p>Existing users can login with OTP verification:</p>
+
+    <div class="two-col">
+      <div>
+        <div class="step-box"><div class="step-number">1</div><div class="step-content">Select <strong>Country Code</strong></div></div>
+        <div class="step-box"><div class="step-number">2</div><div class="step-content">Enter registered <strong>Phone Number</strong></div></div>
+        <div class="step-box"><div class="step-number">3</div><div class="step-content">Click <strong>"Send OTP"</strong></div></div>
+      </div>
+      <div>
+        <div class="step-box"><div class="step-number">4</div><div class="step-content">Enter <strong>6-digit OTP</strong></div></div>
+        <div class="step-box"><div class="step-number">5</div><div class="step-content">Click <strong>"Verify & Login"</strong></div></div>
+      </div>
+    </div>
+
+    <h2>OTP Not Received?</h2>
+    <ul>
+      <li>Wait for timer (2 minutes), then click <strong>"Resend OTP"</strong></li>
+      <li><strong>UAE users:</strong> Check SMS inbox and phone network</li>
+      <li><strong>International users:</strong> Check email inbox <strong>and spam/junk folder</strong></li>
+      <li>Verify the phone number/email is correct</li>
+    </ul>
+
+    <div class="alert-box alert-warning">
+      <span class="alert-icon">⚠</span>
+      <div><strong>Security:</strong> Never share your OTP with anyone. Matajar Group staff will never ask for your OTP.</div>
+    </div>
+
+    <div class="page-footer">Matajar Group Investor Portal - User Manual</div>
+  </div>
+
+  <!-- Page 5: Dashboard & New Submission -->
+  <div class="page">
+    <div class="page-header">
+      <h4>Matajar Group - Investor Portal</h4>
+      <div class="page-num">5</div>
+    </div>
+
+    <h1>5. Dashboard Overview</h1>
+    <p>After logging in, you'll see your personalized dashboard with submission statistics and history.</p>
+
+    <h2>Statistics Cards</h2>
+    <table class="compact-table">
+      <tr>
+        <th>Card</th>
+        <th>Description</th>
+      </tr>
+      <tr>
+        <td><span class="status" style="background:#1a3a2a;color:#d4af37;">Total Submissions</span></td>
+        <td>Total number of forms you have submitted</td>
+      </tr>
+      <tr>
+        <td><span class="status status-draft">Incomplete Drafts</span></td>
+        <td>Forms saved but not yet submitted</td>
+      </tr>
+      <tr>
+        <td><span class="status status-pending">Pending Review</span></td>
+        <td>Submitted forms awaiting review</td>
+      </tr>
+      <tr>
+        <td><span class="status status-verified">Verified</span></td>
+        <td>Forms reviewed and approved</td>
+      </tr>
+      <tr>
+        <td><span class="status status-rejected">Rejected</span></td>
+        <td>Forms needing corrections</td>
+      </tr>
+    </table>
+
+    <h2>Submissions Table</h2>
+    <p><strong>Columns:</strong> Court Agreement No | Name | Amount (AED) | Status | Submitted Date | Actions</p>
+
+    <h1 class="section-spacer">6. Creating New Submission</h1>
+
+    <div class="two-col">
+      <div>
+        <div class="step-box"><div class="step-number">1</div><div class="step-content">Click <strong>"+ New Submission"</strong></div></div>
+        <div class="step-box"><div class="step-number">2</div><div class="step-content">Form has <strong>7 sections</strong></div></div>
+        <div class="step-box"><div class="step-number">3</div><div class="step-content">Fill required fields (marked *)</div></div>
+        <div class="step-box"><div class="step-number">4</div><div class="step-content">Click <strong>"Next"</strong> to proceed</div></div>
+      </div>
+      <div>
+        <div class="step-box"><div class="step-number">5</div><div class="step-content">Use <strong>"Previous"</strong> to go back</div></div>
+        <div class="step-box"><div class="step-number">6</div><div class="step-content">Upload documents in Section 5</div></div>
+        <div class="step-box"><div class="step-number">7</div><div class="step-content">Complete declaration & submit</div></div>
+      </div>
+    </div>
+
+    <h2>Auto-Save Feature</h2>
+    <p>Your progress is automatically saved as a draft. Find incomplete forms in "Incomplete Drafts" section.</p>
+
+    <div class="alert-box alert-warning">
+      <span class="alert-icon">⚠</span>
+      <div><strong>Important:</strong> If you have multiple investments, please submit a <strong>separate form for each investment</strong>.</div>
+    </div>
+
+    <h2>Available Actions</h2>
+    <table class="compact-table">
+      <tr><th>Action</th><th>Icon</th><th>Description</th><th>Available For</th></tr>
+      <tr><td>View</td><td>Eye</td><td>See complete details</td><td>All submissions</td></tr>
+      <tr><td>Edit</td><td>Pencil</td><td>Modify submission</td><td>Draft, Pending only</td></tr>
+      <tr><td>Delete</td><td>Trash</td><td>Remove submission</td><td>Draft, Pending only</td></tr>
+    </table>
+
+    <div class="page-footer">Matajar Group Investor Portal - User Manual</div>
+  </div>
+
+  <!-- Page 6: Form Sections Part 1 -->
+  <div class="page">
+    <div class="page-header">
+      <h4>Matajar Group - Investor Portal</h4>
+      <div class="page-num">6</div>
+    </div>
+
+    <h1>7. Form Sections Guide</h1>
+
+    <h2>Section 1: Personal / Company Information</h2>
+    <table class="compact-table">
+      <tr><th>Field</th><th>Required</th><th>Field</th><th>Required</th></tr>
+      <tr><td>Full Name / Company Name</td><td><strong>Yes</strong></td><td>Email Address</td><td><strong>Yes</strong></td></tr>
+      <tr><td>Phone Number</td><td><strong>Yes</strong></td><td>Mobile Number</td><td>No</td></tr>
+      <tr><td>Country</td><td><strong>Yes</strong></td><td>Address</td><td><strong>Yes</strong></td></tr>
+      <tr><td>City</td><td><strong>Yes</strong></td><td>State / Province</td><td>No</td></tr>
+      <tr><td>Pincode / ZIP</td><td>No</td><td></td><td></td></tr>
+    </table>
+
+    <h2>Section 2: Bank Details</h2>
+    <table class="compact-table">
+      <tr><th>Field</th><th>Required</th><th>Field</th><th>Required</th></tr>
+      <tr><td>Bank Name</td><td><strong>Yes</strong></td><td>Account Number</td><td><strong>Yes</strong></td></tr>
+      <tr><td>Account Holder Name</td><td><strong>Yes</strong></td><td>Branch Name</td><td>No</td></tr>
+      <tr><td>IBAN</td><td>No</td><td></td><td></td></tr>
+    </table>
+
+    <h2>Section 3: Investment Details</h2>
+    <table class="compact-table">
+      <tr><th>Field</th><th>Required</th><th>Description</th></tr>
+      <tr><td>Court Agreement Number</td><td><strong>Yes</strong></td><td>e.g., SN2025/0000440833</td></tr>
+      <tr><td>Investment Reference Number</td><td>No</td><td>If known from your records</td></tr>
+      <tr><td>Investment Amount (AED)</td><td><strong>Yes</strong></td><td>Total amount invested</td></tr>
+      <tr><td>Investment Date</td><td><strong>Yes</strong></td><td>Date of investment</td></tr>
+      <tr><td>Duration (months)</td><td><strong>Yes</strong></td><td>12, 24, 36, 48, 60, or Other</td></tr>
+      <tr><td>Annual Dividend (%)</td><td><strong>Yes</strong></td><td>Promised percentage</td></tr>
+      <tr><td>Dividend Frequency</td><td><strong>Yes</strong></td><td>Monthly, Quarterly, Yearly</td></tr>
+      <tr><td>Investment Status</td><td><strong>Yes</strong></td><td>Active, Completed, Withdrawn</td></tr>
+      <tr><td>Payment Method</td><td><strong>Yes</strong></td><td>Bank Transfer, Cheque, Cash, Wire</td></tr>
+      <tr><td>Paid by Cheque?</td><td><strong>Yes</strong></td><td>Yes or No</td></tr>
+    </table>
+
+    <div class="alert-box alert-info">
+      <span class="alert-icon">ℹ</span>
+      <div><strong>Court Agreement Number:</strong> Find this below the barcode on your court document.</div>
+    </div>
+
+    <h2>Section 4: Dividend Payment History</h2>
+    <table class="compact-table">
+      <tr><th>Field</th><th>Required</th><th>Field</th><th>Required</th></tr>
+      <tr><td>Total Dividends Received (AED)</td><td><strong>Yes</strong></td><td>Last Dividend Date</td><td>No</td></tr>
+      <tr><td>Last Dividend Amount (AED)</td><td>No</td><td>Any Pending Dividends?</td><td><strong>Yes</strong></td></tr>
+      <tr><td>Pending Dividend Amount</td><td>If Yes</td><td></td><td></td></tr>
+    </table>
+
+    <div class="page-footer">Matajar Group Investor Portal - User Manual</div>
+  </div>
+
+  <!-- Page 7: Form Sections Part 2 -->
+  <div class="page">
+    <div class="page-header">
+      <h4>Matajar Group - Investor Portal</h4>
+      <div class="page-num">7</div>
+    </div>
+
+    <h2>Section 5: Document Uploads</h2>
+    <table class="compact-table">
+      <tr><th>Document</th><th>Required</th><th>Description</th></tr>
+      <tr><td>Investment Agreement/Contract Copy</td><td><strong>Yes</strong></td><td>Your signed investment contract</td></tr>
+      <tr><td>Payment Receipt/Proof</td><td><strong>Yes</strong></td><td>Bank transfer receipt or payment proof</td></tr>
+      <tr><td>Dividend Payment Receipts</td><td>No</td><td>Any dividend payment receipts</td></tr>
+      <tr><td>Other Related Documents</td><td>No</td><td>Additional supporting documents</td></tr>
+    </table>
+
+    <div class="alert-box alert-warning">
+      <span class="alert-icon">⚠</span>
+      <div><strong>File Requirements:</strong> Accepted formats: PDF, JPG, PNG. Maximum size: 10MB per document.</div>
+    </div>
+
+    <h2>Section 6: Additional Remarks</h2>
+    <table class="compact-table">
+      <tr><th>Field</th><th>Required</th><th>Description</th></tr>
+      <tr><td>Discrepancies/Issues</td><td>No</td><td>Report any problems with payments, records, etc.</td></tr>
+      <tr><td>Additional Investment Details</td><td>No</td><td>Any other relevant information</td></tr>
+      <tr><td>Contact Person at MAG</td><td>No</td><td>Name of sales rep or employee (if known)</td></tr>
+    </table>
+
+    <h2>Section 7: Declaration</h2>
+    <table class="compact-table">
+      <tr><th>Field</th><th>Required</th><th>Description</th></tr>
+      <tr><td>Confirmation Checkbox</td><td><strong>Yes</strong></td><td>Check to confirm all information is accurate</td></tr>
+      <tr><td>Digital Signature</td><td><strong>Yes</strong></td><td>Type your full name as signature</td></tr>
+    </table>
+
+    <div class="alert-box alert-success">
+      <span class="alert-icon">✓</span>
+      <div>After completing all sections, click <strong>"Submit Form"</strong> to send your submission for review.</div>
+    </div>
+
+    <h1 class="section-spacer">Form Completion Tips</h1>
+
+    <div class="two-col">
+      <div>
+        <h2>Do's</h2>
+        <ul>
+          <li>Fill all required fields marked with *</li>
+          <li>Use accurate information from documents</li>
+          <li>Upload clear, readable document copies</li>
+          <li>Double-check before final submission</li>
+          <li>Save as draft if you need more time</li>
+        </ul>
+      </div>
+      <div>
+        <h2>Don'ts</h2>
+        <ul>
+          <li>Don't submit incomplete information</li>
+          <li>Don't upload blurry or unreadable files</li>
+          <li>Don't exceed 10MB file size limit</li>
+          <li>Don't submit same investment twice</li>
+          <li>Don't share your OTP with anyone</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="page-footer">Matajar Group Investor Portal - User Manual</div>
+  </div>
+
+  <!-- Page 8: Managing Submissions & Status -->
+  <div class="page">
+    <div class="page-header">
+      <h4>Matajar Group - Investor Portal</h4>
+      <div class="page-num">8</div>
+    </div>
+
+    <h1>8. Managing Submissions</h1>
+
+    <div class="two-col">
+      <div>
+        <h2>Viewing a Submission</h2>
+        <ul>
+          <li>Click any row in submissions table</li>
+          <li>Or click the View button (eye icon)</li>
+          <li>Download PDF copy from view page</li>
+        </ul>
+
+        <h2>Editing a Submission</h2>
+        <p>Available for <span class="status status-draft">Draft</span> and <span class="status status-pending">Pending</span> only:</p>
+        <ul>
+          <li>Click Edit button (pencil icon)</li>
+          <li>Make necessary changes</li>
+          <li>Save as draft or submit</li>
+        </ul>
+      </div>
+      <div>
+        <h2>Deleting a Submission</h2>
+        <p>Available for <span class="status status-draft">Draft</span> and <span class="status status-pending">Pending</span> only:</p>
+        <ul>
+          <li>Click Delete button (trash icon)</li>
+          <li>Confirm deletion in popup</li>
+          <li>Action cannot be undone</li>
+        </ul>
+
+        <div class="alert-box alert-warning">
+          <span class="alert-icon">⚠</span>
+          <div><strong>Note:</strong> Verified submissions cannot be edited or deleted.</div>
+        </div>
+      </div>
+    </div>
+
+    <h1 class="section-spacer">9. Understanding Status</h1>
+
+    <table>
+      <tr>
+        <th>Status</th>
+        <th>Meaning</th>
+        <th>Actions Available</th>
+      </tr>
+      <tr>
+        <td><span class="status status-draft">Draft</span></td>
+        <td>Form saved but not yet submitted</td>
+        <td>Edit, Delete, Continue filling</td>
+      </tr>
+      <tr>
+        <td><span class="status status-pending">Pending</span></td>
+        <td>Submitted and waiting for review</td>
+        <td>Edit, Delete, View</td>
+      </tr>
+      <tr>
+        <td><span class="status status-verified">Verified</span></td>
+        <td>Reviewed and approved by team</td>
+        <td>View only, Download PDF</td>
+      </tr>
+      <tr>
+        <td><span class="status status-rejected">Rejected</span></td>
+        <td>Needs corrections or was rejected</td>
+        <td>View, Contact support</td>
+      </tr>
+    </table>
+
+    <h2>Status Flow</h2>
+    <p style="text-align:center; font-size: 11pt; margin: 12px 0; padding: 12px; background: #f5f5f5; border-radius: 6px;">
+      <span class="status status-draft">Draft</span>
+      <span style="margin: 0 8px; color: #666;">→</span>
+      <span class="status status-pending">Pending</span>
+      <span style="margin: 0 8px; color: #666;">→</span>
+      <span class="status status-verified">Verified</span>
+      <span style="margin: 0 6px; color: #666;">or</span>
+      <span class="status status-rejected">Rejected</span>
+    </p>
+
+    <div class="alert-box alert-info">
+      <span class="alert-icon">ℹ</span>
+      <div><strong>Verification Time:</strong> Typically 3-5 business days. You will be notified once reviewed.</div>
+    </div>
+
+    <div class="page-footer">Matajar Group Investor Portal - User Manual</div>
+  </div>
+
+  <!-- Page 9: FAQ & Support -->
+  <div class="page">
+    <div class="page-header">
+      <h4>Matajar Group - Investor Portal</h4>
+      <div class="page-num">9</div>
+    </div>
+
+    <h1>10. Frequently Asked Questions</h1>
+
+    <div class="faq-item">
+      <div class="faq-q">Q: I have multiple investments. Do I need to submit separate forms?</div>
+      <div class="faq-a">A: Yes, please submit a separate form for each investment.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">Q: What if I don't have all the documents right now?</div>
+      <div class="faq-a">A: You can save your form as a draft and come back later to complete it.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">Q: Can I change my information after submission?</div>
+      <div class="faq-a">A: You can edit while status is "Pending". Once verified, changes are not allowed.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">Q: How long does verification take?</div>
+      <div class="faq-a">A: Typically 3-5 business days. You will be notified once reviewed.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">Q: What is the Court Agreement Number?</div>
+      <div class="faq-a">A: It's the reference number on your court document (e.g., SN2025/0000440833).</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">Q: Can I access the portal from my mobile phone?</div>
+      <div class="faq-a">A: Yes, the portal is mobile-responsive and works on all devices.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">Q: Is my information secure?</div>
+      <div class="faq-a">A: Yes, all data is encrypted and stored securely.</div>
+    </div>
+
+    <h1 class="section-spacer">11. Support & Contact</h1>
+
+    <p>If you need assistance or have questions, please contact us:</p>
+
+    <table class="compact-table">
+      <tr>
+        <th>Contact Method</th>
+        <th>Details</th>
+      </tr>
+      <tr>
+        <td>Email</td>
+        <td><strong>Info@matajargroup.com</strong></td>
+      </tr>
+      <tr>
+        <td>Phone</td>
+        <td><strong>+971 XX XXX XXXX</strong></td>
+      </tr>
+      <tr>
+        <td>Working Hours</td>
+        <td>Sunday - Thursday, 9:00 AM - 6:00 PM (GST)</td>
+      </tr>
+    </table>
+
+    <div class="final-footer">
+      <h3>Thank You!</h3>
+      <p>Thank you for using the Matajar Group Investor Portal.</p>
+      <p>We appreciate your cooperation in completing the investment verification process.</p>
+      <p style="margin-top: 10px; color: #d4af37;">© 2025 Matajar Group. All Rights Reserved.</p>
+    </div>
+  </div>
+
+</body>
+</html>

@@ -19,6 +19,8 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [timer, setTimer] = useState(0);
+  const [otpMethod, setOtpMethod] = useState('sms'); // 'sms' or 'email'
+  const [otpDestination, setOtpDestination] = useState('');
 
   const otpRefs = useRef([]);
 
@@ -62,6 +64,9 @@ const Register = () => {
       if (response.data.success) {
         setStep('otp');
         setTimer(120); // 2 minutes
+        // Store OTP method info from response
+        setOtpMethod(response.data.otpMethod || 'sms');
+        setOtpDestination(response.data.destination || fullPhone);
       } else {
         setError(response.data.message || 'Failed to register');
       }
@@ -132,6 +137,9 @@ const Register = () => {
       if (response.data.success) {
         setTimer(120);
         setOtp(['', '', '', '', '', '']);
+        // Update OTP method info
+        setOtpMethod(response.data.otpMethod || 'sms');
+        setOtpDestination(response.data.destination || fullPhone);
       } else {
         setError(response.data.message || 'Failed to resend OTP');
       }
@@ -141,6 +149,27 @@ const Register = () => {
       setLoading(false);
     }
   };
+
+  // Helper to mask email for display
+  const maskEmail = (email) => {
+    if (!email || !email.includes('@')) return email;
+    const [name, domain] = email.split('@');
+    const maskedName = name.length > 2
+      ? name[0] + '*'.repeat(Math.min(name.length - 2, 5)) + name[name.length - 1]
+      : name;
+    return `${maskedName}@${domain}`;
+  };
+
+  // Get display text for where OTP was sent
+  const getOtpSentText = () => {
+    if (otpMethod === 'email') {
+      return `Enter the 6-digit code sent to your email: ${maskEmail(otpDestination)}`;
+    }
+    return `Enter the 6-digit code sent via SMS to ${formData.phoneCode}${formData.phone}`;
+  };
+
+  // Check if international number
+  const isInternational = formData.phoneCode !== '+971';
 
   return (
     <div className="auth-container">
@@ -181,6 +210,11 @@ const Register = () => {
                   placeholder="Enter your email"
                   required
                 />
+                {isInternational && (
+                  <small style={{ color: '#d4af37', marginTop: '5px', display: 'block' }}>
+                    OTP will be sent to this email for international numbers
+                  </small>
+                )}
               </div>
 
               <div className="form-group">
@@ -229,7 +263,12 @@ const Register = () => {
           <>
             <div className="auth-title">
               <h2>Verify OTP</h2>
-              <p>Enter the 6-digit code sent to {formData.phoneCode}{formData.phone}</p>
+              <p>{getOtpSentText()}</p>
+              {otpMethod === 'email' && (
+                <small style={{ color: '#888', display: 'block', marginTop: '5px' }}>
+                  Please also check your spam/junk folder
+                </small>
+              )}
             </div>
 
             <form onSubmit={handleVerifyOtp}>
@@ -273,6 +312,8 @@ const Register = () => {
                   setStep('details');
                   setOtp(['', '', '', '', '', '']);
                   setError('');
+                  setOtpMethod('sms');
+                  setOtpDestination('');
                 }}
               >
                 Back to Details
