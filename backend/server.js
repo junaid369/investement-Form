@@ -8,11 +8,7 @@ const jwt = require("jsonwebtoken");
 const axios = require("axios");
 const https = require("https");
 const nodemailer = require("nodemailer");
-const { Resend } = require("resend");
 require("dotenv").config();
-
-// Initialize Resend (for production server where SMTP is blocked)
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 const app = express();
 
@@ -294,26 +290,34 @@ function getOtpEmailHtml(otp, userName) {
   `;
 }
 
-// Send Email OTP using Resend API (works on servers that block SMTP)
+// Send Email OTP using Resend API via HTTP (works on servers that block SMTP)
 async function sendEmailWithResend(otp, email, userName) {
   try {
-    console.log("Sending email via Resend API to:", email);
-    const { data, error } = await resend.emails.send({
-      from: "Matajar Group <noreply@matajargroup.com>", // You need to verify this domain in Resend
-      to: email,
-      subject: "Matajar Group - Your Verification Code",
-      html: getOtpEmailHtml(otp, userName),
-    });
+    console.log("Sending email via Resend HTTP API to:", email);
 
-    if (error) {
-      console.error("Resend API Error:", error);
-      return false;
-    }
+    const fromEmail = process.env.RESEND_FROM_EMAIL || "Matajar Group <onboarding@resend.dev>";
 
-    console.log("Email sent via Resend, ID:", data.id);
+    const response = await axios.post(
+      "https://api.resend.com/emails",
+      {
+        from: fromEmail,
+        to: email,
+        subject: "Matajar Group - Your Verification Code",
+        html: getOtpEmailHtml(otp, userName),
+      },
+      {
+        headers: {
+          "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        timeout: 30000, // 30 seconds
+      }
+    );
+
+    console.log("Email sent via Resend, ID:", response.data.id);
     return true;
   } catch (error) {
-    console.error("Resend Error:", error.message);
+    console.error("Resend Error:", error.response?.data || error.message);
     return false;
   }
 }
@@ -346,8 +350,8 @@ async function sendEmailOtp(otp, email, userName = "Investor") {
     console.log("Preparing to send Email OTP to:", email);
 
     // Try Resend API first (works on servers that block SMTP)
-    if (resend && process.env.RESEND_API_KEY) {
-      console.log("Using Resend API for email delivery");
+    if (process.env.RESEND_API_KEY) {
+      console.log("Using Resend HTTP API for email delivery");
       return await sendEmailWithResend(otp, email, userName);
     }
 
