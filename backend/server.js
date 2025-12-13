@@ -266,6 +266,7 @@ async function sendEmailOtp(otp, email, userName = "Investor") {
       console.log("Email credentials not configured, OTP:", otp, "Email:", email);
       return true; // For testing without email
     }
+    console.log("Email transporter verified", process.env.SMTP_USER,process.env.SMTP_PASS);
 
     const mailOptions = {
       from: `"Matajar Group" <${process.env.SMTP_USER}>`,
