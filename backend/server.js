@@ -211,20 +211,22 @@ function generateOTP() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-// Email Transporter Configuration - using Gmail service for better reliability
+// Email Transporter Configuration - using Gmail with SSL on port 465
 function createEmailTransporter() {
   return nodemailer.createTransport({
-    service: 'gmail', // Use Gmail service instead of manual host/port
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true, // Use SSL
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
     },
     tls: {
-      rejectUnauthorized: false // Allow self-signed certificates
+      rejectUnauthorized: false
     },
-    connectionTimeout: 10000, // 10 seconds
-    greetingTimeout: 10000,
-    socketTimeout: 15000,
+    connectionTimeout: 30000, // 30 seconds
+    greetingTimeout: 30000,
+    socketTimeout: 30000,
   });
 }
 
