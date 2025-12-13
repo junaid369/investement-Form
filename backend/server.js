@@ -211,16 +211,22 @@ function generateOTP() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-// Email Transporter Configuration
-const emailTransporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "smtp.gmail.com",
-  port: parseInt(process.env.SMTP_PORT) || 587,
-  secure: false, // true for 465, false for other ports
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+// Email Transporter Configuration - using Gmail service for better reliability
+function createEmailTransporter() {
+  return nodemailer.createTransport({
+    service: 'gmail', // Use Gmail service instead of manual host/port
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+    tls: {
+      rejectUnauthorized: false // Allow self-signed certificates
+    },
+    connectionTimeout: 10000, // 10 seconds
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
+  });
+}
 
 // Check if phone is UAE number (+971)
 function isUAENumber(phone) {
@@ -262,11 +268,23 @@ async function sendEmailOtp(otp, email, userName = "Investor") {
     console.log("Preparing to send Email OTP to:", email);
     console.log("Using SMTP User:", process.env.SMTP_USER);
     console.log("Using SMTP Pass:", process.env.SMTP_PASS ? "Configured" : "Not Configured");
+
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
       console.log("Email credentials not configured, OTP:", otp, "Email:", email);
       return true; // For testing without email
     }
-    console.log("Email transporter verified", process.env.SMTP_USER,process.env.SMTP_PASS);
+
+    // Create fresh transporter for each email (handles connection issues better)
+    const transporter = createEmailTransporter();
+
+    // Verify connection first
+    try {
+      await transporter.verify();
+      console.log("SMTP connection verified successfully");
+    } catch (verifyError) {
+      console.error("SMTP verification failed:", verifyError.message);
+      // Continue anyway - sometimes verify fails but sending works
+    }
 
     const mailOptions = {
       from: `"Matajar Group" <${process.env.SMTP_USER}>`,
@@ -296,11 +314,12 @@ async function sendEmailOtp(otp, email, userName = "Investor") {
       `,
     };
 
-    await emailTransporter.sendMail(mailOptions);
-    console.log("Email OTP sent to:", email);
+    const result = await transporter.sendMail(mailOptions);
+    console.log("Email OTP sent to:", email, "MessageId:", result.messageId);
     return true;
   } catch (error) {
     console.error("Email Error:", error.message);
+    console.error("Full error:", error);
     return false;
   }
 }
