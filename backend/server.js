@@ -8,7 +8,11 @@ const jwt = require("jsonwebtoken");
 const axios = require("axios");
 const https = require("https");
 const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 require("dotenv").config();
+
+// Initialize Resend (for production server where SMTP is blocked)
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 const app = express();
 
@@ -264,64 +268,100 @@ async function sendSmsOtp(otp, userNumber) {
   }
 }
 
-// Send Email OTP (for international numbers)
-async function sendEmailOtp(otp, email, userName = "Investor") {
+// Email HTML template
+function getOtpEmailHtml(otp, userName) {
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <div style="background: linear-gradient(135deg, #1a3a2a 0%, #2d5a3d 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+        <h1 style="color: #d4af37; margin: 0; font-size: 28px;">Matajar Group</h1>
+        <p style="color: #fff; margin: 10px 0 0 0; font-size: 14px;">Investor Portal</p>
+      </div>
+      <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
+        <p style="color: #333; font-size: 16px;">Dear ${userName},</p>
+        <p style="color: #555; font-size: 14px;">Your verification code for Matajar Group Investor Portal is:</p>
+        <div style="background: #1a3a2a; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
+          <span style="color: #d4af37; font-size: 32px; font-weight: bold; letter-spacing: 8px;">${otp}</span>
+        </div>
+        <p style="color: #555; font-size: 14px;">This code is valid for <strong>10 minutes</strong> only.</p>
+        <p style="color: #888; font-size: 12px; margin-top: 30px;">If you did not request this code, please ignore this email.</p>
+        <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+        <p style="color: #888; font-size: 11px; text-align: center;">
+          Matajar Group - Investor Portal<br>
+          This is an automated message. Please do not reply.
+        </p>
+      </div>
+    </div>
+  `;
+}
+
+// Send Email OTP using Resend API (works on servers that block SMTP)
+async function sendEmailWithResend(otp, email, userName) {
   try {
-    console.log("Preparing to send Email OTP to:", email);
-    console.log("Using SMTP User:", process.env.SMTP_USER);
-    console.log("Using SMTP Pass:", process.env.SMTP_PASS ? "Configured" : "Not Configured");
+    console.log("Sending email via Resend API to:", email);
+    const { data, error } = await resend.emails.send({
+      from: "Matajar Group <noreply@matajargroup.com>", // You need to verify this domain in Resend
+      to: email,
+      subject: "Matajar Group - Your Verification Code",
+      html: getOtpEmailHtml(otp, userName),
+    });
 
-    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-      console.log("Email credentials not configured, OTP:", otp, "Email:", email);
-      return true; // For testing without email
+    if (error) {
+      console.error("Resend API Error:", error);
+      return false;
     }
 
-    // Create fresh transporter for each email (handles connection issues better)
+    console.log("Email sent via Resend, ID:", data.id);
+    return true;
+  } catch (error) {
+    console.error("Resend Error:", error.message);
+    return false;
+  }
+}
+
+// Send Email OTP using Nodemailer (for local development)
+async function sendEmailWithNodemailer(otp, email, userName) {
+  try {
     const transporter = createEmailTransporter();
-
-    // Verify connection first
-    try {
-      await transporter.verify();
-      console.log("SMTP connection verified successfully");
-    } catch (verifyError) {
-      console.error("SMTP verification failed:", verifyError.message);
-      // Continue anyway - sometimes verify fails but sending works
-    }
 
     const mailOptions = {
       from: `"Matajar Group" <${process.env.SMTP_USER}>`,
       to: email,
       subject: "Matajar Group - Your Verification Code",
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <div style="background: linear-gradient(135deg, #1a3a2a 0%, #2d5a3d 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-            <h1 style="color: #d4af37; margin: 0; font-size: 28px;">Matajar Group</h1>
-            <p style="color: #fff; margin: 10px 0 0 0; font-size: 14px;">Investor Portal</p>
-          </div>
-          <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
-            <p style="color: #333; font-size: 16px;">Dear ${userName},</p>
-            <p style="color: #555; font-size: 14px;">Your verification code for Matajar Group Investor Portal is:</p>
-            <div style="background: #1a3a2a; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
-              <span style="color: #d4af37; font-size: 32px; font-weight: bold; letter-spacing: 8px;">${otp}</span>
-            </div>
-            <p style="color: #555; font-size: 14px;">This code is valid for <strong>10 minutes</strong> only.</p>
-            <p style="color: #888; font-size: 12px; margin-top: 30px;">If you did not request this code, please ignore this email.</p>
-            <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
-            <p style="color: #888; font-size: 11px; text-align: center;">
-              Matajar Group - Investor Portal<br>
-              This is an automated message. Please do not reply.
-            </p>
-          </div>
-        </div>
-      `,
+      html: getOtpEmailHtml(otp, userName),
     };
 
     const result = await transporter.sendMail(mailOptions);
-    console.log("Email OTP sent to:", email, "MessageId:", result.messageId);
+    console.log("Email OTP sent via Nodemailer to:", email, "MessageId:", result.messageId);
     return true;
   } catch (error) {
+    console.error("Nodemailer Error:", error.message);
+    return false;
+  }
+}
+
+// Send Email OTP (for international numbers)
+// Uses Resend API if configured (for production), falls back to Nodemailer (for local)
+async function sendEmailOtp(otp, email, userName = "Investor") {
+  try {
+    console.log("Preparing to send Email OTP to:", email);
+
+    // Try Resend API first (works on servers that block SMTP)
+    if (resend && process.env.RESEND_API_KEY) {
+      console.log("Using Resend API for email delivery");
+      return await sendEmailWithResend(otp, email, userName);
+    }
+
+    // Fall back to Nodemailer (for local development)
+    if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+      console.log("Using Nodemailer (SMTP) for email delivery");
+      return await sendEmailWithNodemailer(otp, email, userName);
+    }
+
+    // No email service configured
+    console.log("No email service configured, OTP:", otp, "Email:", email);
+    return true; // For testing without email
+  } catch (error) {
     console.error("Email Error:", error.message);
-    console.error("Full error:", error);
     return false;
   }
 }
