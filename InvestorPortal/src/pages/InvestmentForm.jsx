@@ -19,6 +19,18 @@ const COUNTRY_CODES = [
 
 const STORAGE_KEY = 'investorForm_draft';
 
+// Helper function to format date for input field (YYYY-MM-DD)
+const formatDateForInput = (dateValue) => {
+  if (!dateValue) return '';
+  try {
+    const date = new Date(dateValue);
+    if (isNaN(date.getTime())) return '';
+    return date.toISOString().split('T')[0];
+  } catch {
+    return '';
+  }
+};
+
 const initialFormData = {
   courtAgreementNumber: '',
   personalInfo: {
@@ -164,8 +176,11 @@ const InvestmentForm = () => {
     }
   }, [formData, currentSection, draftId, id]);
 
-  // Auto-save draft to server
+  // Auto-save draft to server (only for new forms, not when editing)
   useEffect(() => {
+    // Don't auto-save if we're editing an existing submission
+    if (id) return;
+
     const timer = setTimeout(() => {
       if (formData.personalInfo.fullName || formData.courtAgreementNumber) {
         saveDraft();
@@ -173,7 +188,7 @@ const InvestmentForm = () => {
     }, 30000); // Auto-save every 30 seconds
 
     return () => clearTimeout(timer);
-  }, [formData]);
+  }, [formData, id]);
 
   const loadSubmission = async () => {
     setLoading(true);
@@ -197,9 +212,21 @@ const InvestmentForm = () => {
             pincode: data.personalInfo?.pincode || '',
           },
           bankDetails: data.bankDetails || initialFormData.bankDetails,
-          investmentDetails: data.investmentDetails || initialFormData.investmentDetails,
-          paymentMethod: data.paymentMethod || initialFormData.paymentMethod,
-          dividendHistory: data.dividendHistory || initialFormData.dividendHistory,
+          investmentDetails: {
+            ...initialFormData.investmentDetails,
+            ...data.investmentDetails,
+            investmentDate: formatDateForInput(data.investmentDetails?.investmentDate),
+          },
+          paymentMethod: {
+            ...initialFormData.paymentMethod,
+            ...data.paymentMethod,
+            chequeDate: formatDateForInput(data.paymentMethod?.chequeDate),
+          },
+          dividendHistory: {
+            ...initialFormData.dividendHistory,
+            ...data.dividendHistory,
+            lastReceivedDate: formatDateForInput(data.dividendHistory?.lastReceivedDate),
+          },
           remarks: data.remarks || initialFormData.remarks,
           declaration: data.declaration || initialFormData.declaration,
           completedSections: data.completedSections || [],
@@ -225,10 +252,14 @@ const InvestmentForm = () => {
         ...formData,
         personalInfo: {
           ...formData.personalInfo,
-          phone: formData.personalInfo.phoneCode + formData.personalInfo.phone,
+          phone: formData.personalInfo.phone
+            ? formData.personalInfo.phoneCode + formData.personalInfo.phone
+            : '',
           mobile: formData.personalInfo.mobile
             ? formData.personalInfo.mobileCode + formData.personalInfo.mobile
-            : null,
+            : '',
+          // Don't save mobileCode if mobile is empty
+          mobileCode: formData.personalInfo.mobile ? formData.personalInfo.mobileCode : '',
         },
         completedSections: formData.completedSections,
         status: 'draft', // Always draft until final submit
@@ -293,7 +324,7 @@ const InvestmentForm = () => {
       case 1: // Personal Info
         if (!formData.personalInfo.fullName) newErrors['personalInfo.fullName'] = 'Required';
         if (!formData.personalInfo.email) newErrors['personalInfo.email'] = 'Required';
-        if (!formData.personalInfo.phone) newErrors['personalInfo.phone'] = 'Required';
+        if (!formData.personalInfo.phone) newErrors['personalInfo.phone'] = 'Phone number is required';
         if (!formData.personalInfo.country) newErrors['personalInfo.country'] = 'Required';
         break;
       case 2: // Bank Details
@@ -302,6 +333,7 @@ const InvestmentForm = () => {
         if (!formData.bankDetails.accountHolderName) newErrors['bankDetails.accountHolderName'] = 'Required';
         break;
       case 3: // Investment Details
+        if (!formData.courtAgreementNumber) newErrors['courtAgreementNumber'] = 'Court Agreement Number is required';
         if (!formData.investmentDetails.amount) newErrors['investmentDetails.amount'] = 'Required';
         if (!formData.investmentDetails.investmentDate) newErrors['investmentDetails.investmentDate'] = 'Required';
         if (!formData.investmentDetails.duration) newErrors['investmentDetails.duration'] = 'Required';
@@ -364,10 +396,14 @@ const InvestmentForm = () => {
         ...(id && { _id: id }),
         personalInfo: {
           ...formData.personalInfo,
-          phone: formData.personalInfo.phoneCode + formData.personalInfo.phone,
+          phone: formData.personalInfo.phone
+            ? formData.personalInfo.phoneCode + formData.personalInfo.phone
+            : '',
           mobile: formData.personalInfo.mobile
             ? formData.personalInfo.mobileCode + formData.personalInfo.mobile
-            : null,
+            : '',
+          // Don't save mobileCode if mobile is empty
+          mobileCode: formData.personalInfo.mobile ? formData.personalInfo.mobileCode : '',
         },
         completedSections: allCompleted,
         // Only set to 'pending' if all sections complete, otherwise 'draft'
@@ -690,14 +726,15 @@ const InvestmentForm = () => {
               <h3 className="section-title">Investment Details</h3>
 
               <div className="form-row">
-                <div className="form-group">
-                  <label>Court Agreement Number</label>
+                <div className={`form-group ${errors['courtAgreementNumber'] ? 'error' : ''}`}>
+                  <label>Court Agreement Number *</label>
                   <input
                     type="text"
                     value={formData.courtAgreementNumber}
                     onChange={(e) => handleRootChange('courtAgreementNumber', e.target.value)}
                     placeholder="e.g., SN2025/0000440833"
                   />
+                  {errors['courtAgreementNumber'] && <span className="form-error">{errors['courtAgreementNumber']}</span>}
                 </div>
                 <div className="form-group">
                   <label>Reference Number</label>
