@@ -719,20 +719,10 @@ console.log("Fetching submissions for user:", req.user.userId);
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    // Build query - filter by userId OR user's phone/email (for backwards compatibility)
-    // Also check if phone contains the user's phone number (without country code matching issues)
-    const phoneDigits = user.phone ? user.phone.replace(/\D/g, '').slice(-9) : '';
-    let query = {
-      $or: [
-        { userId: user._id },
-        { "personalInfo.phone": user.phone },
-        { "personalInfo.email": user.email },
-        ...(user.email ? [{ "personalInfo.email": { $regex: new RegExp(`^${user.email}$`, 'i') } }] : []),
-        ...(phoneDigits ? [{ "personalInfo.phone": { $regex: phoneDigits } }] : []),
-      ],
-    };
+    // Build query - filter by userId only
+    let query = { userId: user._id };
 
-    // Add search filter
+    // Add search filter (search by name or agreement number)
     if (search) {
       query.$and = [
         {
@@ -752,16 +742,8 @@ console.log("Fetching submissions for user:", req.user.userId);
       .skip(skip)
       .limit(limitNum);
 
-    // Get all submissions for stats (check userId OR matching phone/email for backwards compatibility)
-    const allSubmissions = await InvestorForm.find({
-      $or: [
-        { userId: user._id },
-        { "personalInfo.phone": user.phone },
-        { "personalInfo.email": user.email },
-        ...(user.email ? [{ "personalInfo.email": { $regex: new RegExp(`^${user.email}$`, 'i') } }] : []),
-        ...(phoneDigits ? [{ "personalInfo.phone": { $regex: phoneDigits } }] : []),
-      ],
-    });
+    // Get all submissions for stats (check userId only)
+    const allSubmissions = await InvestorForm.find({ userId: user._id });
 
     res.json({
       success: true,
@@ -785,17 +767,9 @@ app.get("/api/user/submissions/:id", authenticateToken, async (req, res) => {
       return res.status(404).json({ success: false, message: "Submission not found" });
     }
 
-    // Verify ownership - check userId first, then fall back to phone/email matching
+    // Verify ownership - check userId only
     const user = await User.findById(req.user.userId);
-    const phoneDigits = user.phone ? user.phone.replace(/\D/g, '').slice(-9) : '';
-    const submissionPhoneDigits = submission.personalInfo?.phone ? submission.personalInfo.phone.replace(/\D/g, '').slice(-9) : '';
-
-    const isOwner =
-      (submission.userId && submission.userId.toString() === user._id.toString()) ||
-      (submission.personalInfo?.phone === user.phone) ||
-      (submission.personalInfo?.email === user.email) ||
-      (submission.personalInfo?.email && user.email && submission.personalInfo.email.toLowerCase() === user.email.toLowerCase()) ||
-      (phoneDigits && submissionPhoneDigits && phoneDigits === submissionPhoneDigits);
+    const isOwner = submission.userId && submission.userId.toString() === user._id.toString();
 
     if (!isOwner) {
       console.log("Access denied for user:", user._id, "submission userId:", submission.userId);
@@ -817,17 +791,9 @@ app.delete("/api/user/submissions/:id", authenticateToken, async (req, res) => {
       return res.status(404).json({ success: false, message: "Submission not found" });
     }
 
-    // Verify ownership - check userId first, then fall back to phone/email matching
+    // Verify ownership - check userId only
     const user = await User.findById(req.user.userId);
-    const phoneDigits = user.phone ? user.phone.replace(/\D/g, '').slice(-9) : '';
-    const submissionPhoneDigits = submission.personalInfo?.phone ? submission.personalInfo.phone.replace(/\D/g, '').slice(-9) : '';
-
-    const isOwner =
-      (submission.userId && submission.userId.toString() === user._id.toString()) ||
-      (submission.personalInfo?.phone === user.phone) ||
-      (submission.personalInfo?.email === user.email) ||
-      (submission.personalInfo?.email && user.email && submission.personalInfo.email.toLowerCase() === user.email.toLowerCase()) ||
-      (phoneDigits && submissionPhoneDigits && phoneDigits === submissionPhoneDigits);
+    const isOwner = submission.userId && submission.userId.toString() === user._id.toString();
 
     if (!isOwner) {
       return res.status(403).json({ success: false, message: "Access denied" });
