@@ -322,10 +322,10 @@ const InvestmentForm = () => {
 
     switch (sectionNum) {
       case 1: // Personal Info
-        if (!formData.personalInfo.fullName) newErrors['personalInfo.fullName'] = 'Required';
-        if (!formData.personalInfo.email) newErrors['personalInfo.email'] = 'Required';
-        if (!formData.personalInfo.phone) newErrors['personalInfo.phone'] = 'Phone number is required';
-        if (!formData.personalInfo.country) newErrors['personalInfo.country'] = 'Required';
+        if (!formData.personalInfo.fullName?.trim()) newErrors['personalInfo.fullName'] = 'Required';
+        if (!formData.personalInfo.email?.trim()) newErrors['personalInfo.email'] = 'Required';
+        if (!formData.personalInfo.phone?.trim()) newErrors['personalInfo.phone'] = 'Phone number is required';
+        if (!formData.personalInfo.country?.trim()) newErrors['personalInfo.country'] = 'Required';
         break;
       case 2: // Bank Details
         if (!formData.bankDetails.bankName) newErrors['bankDetails.bankName'] = 'Required';
@@ -333,8 +333,9 @@ const InvestmentForm = () => {
         if (!formData.bankDetails.accountHolderName) newErrors['bankDetails.accountHolderName'] = 'Required';
         break;
       case 3: // Investment Details
-        if (!formData.courtAgreementNumber) newErrors['courtAgreementNumber'] = 'Court Agreement Number is required';
-        if (!formData.investmentDetails.amount) newErrors['investmentDetails.amount'] = 'Required';
+        if (!formData.investmentDetails.amount || Number(formData.investmentDetails.amount) <= 0) {
+          newErrors['investmentDetails.amount'] = 'Amount must be greater than 0';
+        }
         if (!formData.investmentDetails.investmentDate) newErrors['investmentDetails.investmentDate'] = 'Required';
         if (!formData.investmentDetails.duration) newErrors['investmentDetails.duration'] = 'Required';
         if (!formData.investmentDetails.annualDividendPercentage) newErrors['investmentDetails.annualDividendPercentage'] = 'Required';
@@ -726,15 +727,14 @@ const InvestmentForm = () => {
               <h3 className="section-title">Investment Details</h3>
 
               <div className="form-row">
-                <div className={`form-group ${errors['courtAgreementNumber'] ? 'error' : ''}`}>
-                  <label>Court Agreement Number *</label>
+                <div className="form-group">
+                  <label>Court Agreement Number</label>
                   <input
                     type="text"
                     value={formData.courtAgreementNumber}
                     onChange={(e) => handleRootChange('courtAgreementNumber', e.target.value)}
                     placeholder="e.g., SN2025/0000440833"
                   />
-                  {errors['courtAgreementNumber'] && <span className="form-error">{errors['courtAgreementNumber']}</span>}
                 </div>
                 <div className="form-group">
                   <label>Reference Number</label>
@@ -752,6 +752,7 @@ const InvestmentForm = () => {
                   <label>Investment Amount (AED) *</label>
                   <input
                     type="number"
+                    min="1"
                     value={formData.investmentDetails.amount}
                     onChange={(e) => handleChange('investmentDetails', 'amount', e.target.value)}
                     placeholder="Enter amount"
