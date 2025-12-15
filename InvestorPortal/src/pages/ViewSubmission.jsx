@@ -11,11 +11,22 @@ const ViewSubmission = () => {
   const [submission, setSubmission] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+  };
+
+  const formatAmount = (amount) => {
+    if (!amount) return '0';
+    return Number(amount).toLocaleString();
+  };
+
   const handleDownloadPDF = () => {
     if (!submission) return;
-
-    const printContent = printRef.current;
-    const originalContents = document.body.innerHTML;
 
     // Create print-friendly HTML
     const printHTML = `
@@ -337,20 +348,6 @@ const ViewSubmission = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-GB', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    });
-  };
-
-  const formatAmount = (amount) => {
-    if (!amount) return '0';
-    return Number(amount).toLocaleString();
   };
 
   if (loading) {
