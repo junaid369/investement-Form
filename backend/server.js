@@ -1144,7 +1144,13 @@ app.post("/api/submissions/:id/generate-certificate", async (req, res) => {
       ContentType: "application/pdf",
     };
 
-    const s3Result = await s3.upload(uploadParams).promise();
+    const command = new PutObjectCommand(uploadParams);
+    await s3Client.send(command);
+
+    // Construct S3 URL
+    const s3Url = CLOUDFRONT_URL
+      ? `${CLOUDFRONT_URL}/${fileName}`
+      : `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
 
     // Update submission with S3 URL
     const updatedSubmission = await InvestorForm.findByIdAndUpdate(
@@ -1153,7 +1159,7 @@ app.post("/api/submissions/:id/generate-certificate", async (req, res) => {
         certificateGenerated: true,
         certificateGeneratedAt: new Date(),
         certificateNumber: certNumber,
-        certificatePdfUrl: s3Result.Location,
+        certificatePdfUrl: s3Url,
         verifiedBy: verifiedBy || "System",
       },
       { new: true }
