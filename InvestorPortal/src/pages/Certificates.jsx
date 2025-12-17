@@ -32,7 +32,9 @@ const Certificates = () => {
   }, [user]);
 
   const fetchCertificates = async () => {
+    console.log("Fetching certificates for user:", user);
     if (!user?._id) {
+      console.log("No user ID found, stopping fetch");
       setLoading(false);
       return;
     }
@@ -40,10 +42,21 @@ const Certificates = () => {
     try {
       setLoading(true);
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
-      const response = await fetch(`${API_URL}/api/user/${user._id}/certificates`);
+      console.log("API URL:", API_URL);
+      const url = `${API_URL}/api/user/${user._id}/certificates`;
+      console.log("Fetching from:", url);
+
+      const response = await fetch(url);
+      console.log("Response status:", response.status);
+
       const data = await response.json();
+      console.log("Response data:", data);
+
       if (data.success) {
         setCertificates(data.data);
+        console.log("Certificates loaded:", data.data.length);
+      } else {
+        console.error("API returned success: false", data);
       }
     } catch (error) {
       console.error("Error fetching certificates:", error);
