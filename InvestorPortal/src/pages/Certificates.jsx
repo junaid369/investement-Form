@@ -25,9 +25,16 @@ const Certificates = () => {
   const [certificates, setCertificates] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  console.log("Certificates component mounted, user:", user);
+
   useEffect(() => {
+    console.log("useEffect triggered, user:", user);
     if (user?._id) {
+      console.log("User has ID, calling fetchCertificates");
       fetchCertificates();
+    } else {
+      console.log("No user ID, setting loading to false");
+      setLoading(false);
     }
   }, [user]);
 
