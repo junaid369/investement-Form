@@ -328,25 +328,31 @@ const generateVerificationCertificate = (submission) => {
   doc.setTextColor(...COLORS.gold);
   doc.text("Dubai, UAE", rightSigX + sigBoxWidth / 2, signatureY + sigBoxHeight - 1, { align: "center" });
 
-  yPosition = signatureY + sigBoxHeight + 6;
-
   // ===== FOOTER - CLEAN & PROFESSIONAL =====
   // Bottom gold bar FIRST (at the very bottom)
   doc.setFillColor(...COLORS.gold);
   doc.rect(12, pageHeight - 20, pageWidth - 24, 8, "F");
 
-  // Gold divider line ABOVE the bottom bar
-  const footerStartY = pageHeight - 28;
-  doc.setDrawColor(...COLORS.gold);
-  doc.setLineWidth(0.6);
-  doc.line(margin + 25, footerStartY, pageWidth - margin - 25, footerStartY);
+  // Calculate footer position - fixed from bottom
+  const footerDividerY = pageHeight - 30;
+  const footerTextY = pageHeight - 25;
 
-  // Footer text - positioned safely above the gold bar
+  // Gold divider line
+  doc.setDrawColor(...COLORS.gold);
+  doc.setLineWidth(0.5);
+  doc.line(margin + 20, footerDividerY, pageWidth - margin - 20, footerDividerY);
+
+  // Footer text on TWO lines for better readability
   doc.setFontSize(6.5);
-  doc.setTextColor(90, 90, 90);
+  doc.setTextColor(80, 80, 80);
   doc.setFont("helvetica", "normal");
-  const footerText = `${COMPANY_INFO.address}  •  ${COMPANY_INFO.phone}  •  ${COMPANY_INFO.email}  •  ${COMPANY_INFO.website}`;
-  doc.text(footerText, pageWidth / 2, footerStartY + 4, { align: "center" });
+
+  // Line 1: Address
+  doc.text(COMPANY_INFO.address, pageWidth / 2, footerTextY, { align: "center" });
+
+  // Line 2: Contact details
+  const contactInfo = `${COMPANY_INFO.phone}  •  ${COMPANY_INFO.email}  •  ${COMPANY_INFO.website}`;
+  doc.text(contactInfo, pageWidth / 2, footerTextY + 3.5, { align: "center" });
 
   // Return PDF as buffer
   return Buffer.from(doc.output("arraybuffer"));
