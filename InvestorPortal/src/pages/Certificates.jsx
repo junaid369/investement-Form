@@ -74,9 +74,14 @@ const Certificates = () => {
 
   const handleViewCertificate = (submission) => {
     try {
+      console.log("Certificate URL:", submission.certificatePdfUrl);
+      console.log("Full submission:", submission);
       if (submission.certificatePdfUrl) {
         // Open S3 URL in new tab
-        window.open(submission.certificatePdfUrl, "_blank");
+        const opened = window.open(submission.certificatePdfUrl, "_blank", "noopener,noreferrer");
+        if (!opened || opened.closed || typeof opened.closed === "undefined") {
+          alert("Popup blocked. Please allow popups for this site and try again.");
+        }
       } else {
         alert("Certificate PDF not available. Please contact support.");
       }
