@@ -272,12 +272,6 @@ const generateVerificationCertificate = (submission) => {
   doc.text(splitAuth, pageWidth / 2, yPosition, { align: "center" });
   yPosition += (splitAuth.length * 3.5) + 8;
 
-  // Gold divider line
-  doc.setDrawColor(...COLORS.gold);
-  doc.setLineWidth(0.8);
-  doc.line(margin + 25, yPosition, pageWidth - margin - 25, yPosition);
-  yPosition += 3;
-
   // ===== FOOTER - CLEAN & PROFESSIONAL =====
   // Bottom gold bar FIRST (at the very bottom)
   doc.setFillColor(...COLORS.gold);
