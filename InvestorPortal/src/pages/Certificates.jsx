@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const formatDate = (dateString) => {
   if (!dateString) return "N/A";
@@ -20,18 +21,26 @@ const formatAmount = (amount) => {
 
 const Certificates = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [certificates, setCertificates] = useState([]);
   const [loading, setLoading] = useState(true);
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
 
   useEffect(() => {
-    fetchCertificates();
-  }, []);
+    if (user?._id) {
+      fetchCertificates();
+    }
+  }, [user]);
 
   const fetchCertificates = async () => {
+    if (!user?._id) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:5050/api/user/${user._id}/certificates`);
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
+      const response = await fetch(`${API_URL}/api/user/${user._id}/certificates`);
       const data = await response.json();
       if (data.success) {
         setCertificates(data.data);
