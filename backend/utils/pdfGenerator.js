@@ -270,76 +270,79 @@ const generateVerificationCertificate = (submission) => {
   const authText = "This certificate has been electronically generated and verified. It serves as official confirmation of the investment closure verification process.";
   const splitAuth = doc.splitTextToSize(authText, pageWidth - (margin * 2) - 30);
   doc.text(splitAuth, pageWidth / 2, yPosition, { align: "center" });
-  yPosition += (splitAuth.length * 3.5) + 10;
+  yPosition += (splitAuth.length * 3.5) + 8;
 
   // Gold divider line
   doc.setDrawColor(...COLORS.gold);
-  doc.setLineWidth(1);
-  doc.line(margin + 30, yPosition, pageWidth - margin - 30, yPosition);
-  yPosition += 12;
+  doc.setLineWidth(0.8);
+  doc.line(margin + 25, yPosition, pageWidth - margin - 25, yPosition);
+  yPosition += 10;
 
   // Signature section - side by side layout
   const signatureY = yPosition;
-  const sigBoxWidth = 60;
-  const sigBoxHeight = 18;
+  const sigBoxWidth = 55;
+  const sigBoxHeight = 16;
   const spacing = (pageWidth - (margin * 2) - (sigBoxWidth * 2)) / 3;
   const leftSigX = margin + spacing;
   const rightSigX = pageWidth - margin - spacing - sigBoxWidth;
 
   // Left: Authorized Signature
   doc.setDrawColor(...COLORS.gold);
-  doc.setLineWidth(0.8);
+  doc.setLineWidth(0.7);
   doc.setFillColor(255, 255, 255);
   doc.roundedRect(leftSigX, signatureY, sigBoxWidth, sigBoxHeight, 2, 2, "FD");
 
-  // Signature line
+  // Signature line inside box
+  doc.setDrawColor(...COLORS.gold);
   doc.setLineWidth(0.5);
-  doc.line(leftSigX + 8, signatureY + 10, leftSigX + sigBoxWidth - 8, signatureY + 10);
+  doc.line(leftSigX + 6, signatureY + 8, leftSigX + sigBoxWidth - 6, signatureY + 8);
 
-  doc.setFontSize(8);
+  doc.setFontSize(7.5);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...COLORS.black);
-  doc.text("AUTHORIZED BY", leftSigX + sigBoxWidth / 2, signatureY + 14, { align: "center" });
+  doc.text("AUTHORIZED BY", leftSigX + sigBoxWidth / 2, signatureY + 12, { align: "center" });
 
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(7);
+  doc.setFontSize(6.5);
   doc.setTextColor(90, 90, 90);
-  doc.text(verificationDate, leftSigX + sigBoxWidth / 2, signatureY + sigBoxHeight - 2, { align: "center" });
+  doc.text(verificationDate, leftSigX + sigBoxWidth / 2, signatureY + sigBoxHeight - 1, { align: "center" });
 
   // Right: Company Seal
   doc.setDrawColor(...COLORS.gold);
-  doc.setLineWidth(0.8);
+  doc.setLineWidth(0.7);
   doc.setFillColor(255, 255, 255);
   doc.roundedRect(rightSigX, signatureY, sigBoxWidth, sigBoxHeight, 2, 2, "FD");
 
-  // Signature line
+  // Signature line inside box
+  doc.setDrawColor(...COLORS.gold);
   doc.setLineWidth(0.5);
-  doc.line(rightSigX + 8, signatureY + 10, rightSigX + sigBoxWidth - 8, signatureY + 10);
+  doc.line(rightSigX + 6, signatureY + 8, rightSigX + sigBoxWidth - 6, signatureY + 8);
 
-  doc.setFontSize(8);
+  doc.setFontSize(7.5);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...COLORS.black);
-  doc.text("COMPANY SEAL", rightSigX + sigBoxWidth / 2, signatureY + 14, { align: "center" });
+  doc.text("COMPANY SEAL", rightSigX + sigBoxWidth / 2, signatureY + 12, { align: "center" });
 
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(7);
+  doc.setFontSize(6.5);
   doc.setTextColor(...COLORS.gold);
-  doc.text("Dubai, UAE", rightSigX + sigBoxWidth / 2, signatureY + sigBoxHeight - 2, { align: "center" });
+  doc.text("Dubai, UAE", rightSigX + sigBoxWidth / 2, signatureY + sigBoxHeight - 1, { align: "center" });
+
+  yPosition = signatureY + sigBoxHeight + 8;
 
   // ===== FOOTER - CLEAN & PROFESSIONAL =====
-  const footerY = pageHeight - 18;
-
   // Gold divider line
   doc.setDrawColor(...COLORS.gold);
-  doc.setLineWidth(0.8);
-  doc.line(margin + 20, footerY - 6, pageWidth - margin - 20, footerY - 6);
+  doc.setLineWidth(0.6);
+  doc.line(margin + 25, yPosition, pageWidth - margin - 25, yPosition);
+  yPosition += 5;
 
   // Footer text - single line
-  doc.setFontSize(7);
+  doc.setFontSize(6.5);
   doc.setTextColor(90, 90, 90);
   doc.setFont("helvetica", "normal");
   const footerText = `${COMPANY_INFO.address}  •  ${COMPANY_INFO.phone}  •  ${COMPANY_INFO.email}  •  ${COMPANY_INFO.website}`;
-  doc.text(footerText, pageWidth / 2, footerY, { align: "center" });
+  doc.text(footerText, pageWidth / 2, yPosition, { align: "center" });
 
   // Bottom gold bar
   doc.setFillColor(...COLORS.gold);
