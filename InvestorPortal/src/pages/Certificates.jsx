@@ -25,25 +25,18 @@ const Certificates = () => {
   const [certificates, setCertificates] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  console.log("Certificates component mounted, user:", user);
-
   useEffect(() => {
-    console.log("useEffect triggered, user:", user);
     const userId = user?._id || user?.id;
     if (userId) {
-      console.log("User has ID, calling fetchCertificates");
       fetchCertificates();
     } else {
-      console.log("No user ID, setting loading to false");
       setLoading(false);
     }
   }, [user]);
 
   const fetchCertificates = async () => {
-    console.log("Fetching certificates for user:", user);
     const userId = user?._id || user?.id;
     if (!userId) {
-      console.log("No user ID found, stopping fetch");
       setLoading(false);
       return;
     }
@@ -51,21 +44,11 @@ const Certificates = () => {
     try {
       setLoading(true);
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
-      console.log("API URL:", API_URL);
-      const url = `${API_URL}/api/user/${userId}/certificates`;
-      console.log("Fetching from:", url);
-
-      const response = await fetch(url);
-      console.log("Response status:", response.status);
-
+      const response = await fetch(`${API_URL}/api/user/${userId}/certificates`);
       const data = await response.json();
-      console.log("Response data:", data);
 
       if (data.success) {
         setCertificates(data.data);
-        console.log("Certificates loaded:", data.data.length);
-      } else {
-        console.error("API returned success: false", data);
       }
     } catch (error) {
       console.error("Error fetching certificates:", error);
@@ -96,14 +79,9 @@ const Certificates = () => {
 
   const handleViewCertificate = (submission) => {
     try {
-      console.log("Certificate URL:", submission.certificatePdfUrl);
-      console.log("Full submission:", submission);
       if (submission.certificatePdfUrl) {
         // Open S3 URL in new tab
-        const opened = window.open(submission.certificatePdfUrl, "_blank", "noopener,noreferrer");
-        if (!opened || opened.closed || typeof opened.closed === "undefined") {
-          alert("Popup blocked. Please allow popups for this site and try again.");
-        }
+        window.open(submission.certificatePdfUrl, "_blank", "noopener,noreferrer");
       } else {
         alert("Certificate PDF not available. Please contact support.");
       }
