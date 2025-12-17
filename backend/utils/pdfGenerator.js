@@ -328,25 +328,25 @@ const generateVerificationCertificate = (submission) => {
   doc.setTextColor(...COLORS.gold);
   doc.text("Dubai, UAE", rightSigX + sigBoxWidth / 2, signatureY + sigBoxHeight - 1, { align: "center" });
 
-  yPosition = signatureY + sigBoxHeight + 8;
+  yPosition = signatureY + sigBoxHeight + 6;
 
   // ===== FOOTER - CLEAN & PROFESSIONAL =====
-  // Gold divider line
+  // Bottom gold bar FIRST (at the very bottom)
+  doc.setFillColor(...COLORS.gold);
+  doc.rect(12, pageHeight - 20, pageWidth - 24, 8, "F");
+
+  // Gold divider line ABOVE the bottom bar
+  const footerStartY = pageHeight - 28;
   doc.setDrawColor(...COLORS.gold);
   doc.setLineWidth(0.6);
-  doc.line(margin + 25, yPosition, pageWidth - margin - 25, yPosition);
-  yPosition += 5;
+  doc.line(margin + 25, footerStartY, pageWidth - margin - 25, footerStartY);
 
-  // Footer text - single line
+  // Footer text - positioned safely above the gold bar
   doc.setFontSize(6.5);
   doc.setTextColor(90, 90, 90);
   doc.setFont("helvetica", "normal");
   const footerText = `${COMPANY_INFO.address}  •  ${COMPANY_INFO.phone}  •  ${COMPANY_INFO.email}  •  ${COMPANY_INFO.website}`;
-  doc.text(footerText, pageWidth / 2, yPosition, { align: "center" });
-
-  // Bottom gold bar
-  doc.setFillColor(...COLORS.gold);
-  doc.rect(12, pageHeight - 20, pageWidth - 24, 8, "F");
+  doc.text(footerText, pageWidth / 2, footerStartY + 4, { align: "center" });
 
   // Return PDF as buffer
   return Buffer.from(doc.output("arraybuffer"));
