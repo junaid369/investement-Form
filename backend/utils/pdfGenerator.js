@@ -1,4 +1,4 @@
-const { jsPDF } = require("jspdf");
+const jsPDF = require("jspdf").jsPDF;
 require("jspdf-autotable");
 
 // Company Information
