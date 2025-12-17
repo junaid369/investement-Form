@@ -29,7 +29,8 @@ const Certificates = () => {
 
   useEffect(() => {
     console.log("useEffect triggered, user:", user);
-    if (user?._id) {
+    const userId = user?._id || user?.id;
+    if (userId) {
       console.log("User has ID, calling fetchCertificates");
       fetchCertificates();
     } else {
@@ -40,7 +41,8 @@ const Certificates = () => {
 
   const fetchCertificates = async () => {
     console.log("Fetching certificates for user:", user);
-    if (!user?._id) {
+    const userId = user?._id || user?.id;
+    if (!userId) {
       console.log("No user ID found, stopping fetch");
       setLoading(false);
       return;
@@ -50,7 +52,7 @@ const Certificates = () => {
       setLoading(true);
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
       console.log("API URL:", API_URL);
-      const url = `${API_URL}/api/user/${user._id}/certificates`;
+      const url = `${API_URL}/api/user/${userId}/certificates`;
       console.log("Fetching from:", url);
 
       const response = await fetch(url);
