@@ -169,6 +169,7 @@ const investorFormSchema = new mongoose.Schema(
     certificateGenerated: { type: Boolean, default: false },
     certificateGeneratedAt: { type: Date },
     certificateNumber: { type: String },
+    certificatePdfUrl: { type: String }, // S3 URL for the certificate PDF
     verifiedBy: { type: String }, // Admin/Staff who verified
   },
   { timestamps: true }
@@ -1108,7 +1109,7 @@ app.patch("/api/submissions/:id/status", async (req, res) => {
   }
 });
 
-// Mark certificate as generated
+// Mark certificate as generated and upload to S3
 app.post("/api/submissions/:id/generate-certificate", async (req, res) => {
   try {
     const { verifiedBy } = req.body;
@@ -1125,12 +1126,34 @@ app.post("/api/submissions/:id/generate-certificate", async (req, res) => {
     // Generate certificate number
     const certNumber = `CERT-${submission._id.toString().slice(-8).toUpperCase()}`;
 
+    // Update submission with certificate info first
+    submission.certificateNumber = certNumber;
+    submission.verifiedBy = verifiedBy || "System";
+    submission.certificateGeneratedAt = new Date();
+
+    // Generate PDF
+    const { generateVerificationCertificate } = require("./utils/pdfGenerator");
+    const pdfBuffer = generateVerificationCertificate(submission);
+
+    // Upload to S3
+    const fileName = `certificates/${certNumber}_${submission.personalInfo?.fullName?.replace(/\s+/g, "_")}_${Date.now()}.pdf`;
+    const uploadParams = {
+      Bucket: BUCKET_NAME,
+      Key: fileName,
+      Body: pdfBuffer,
+      ContentType: "application/pdf",
+    };
+
+    const s3Result = await s3.upload(uploadParams).promise();
+
+    // Update submission with S3 URL
     const updatedSubmission = await InvestorForm.findByIdAndUpdate(
       req.params.id,
       {
         certificateGenerated: true,
         certificateGeneratedAt: new Date(),
         certificateNumber: certNumber,
+        certificatePdfUrl: s3Result.Location,
         verifiedBy: verifiedBy || "System",
       },
       { new: true }
@@ -1138,6 +1161,7 @@ app.post("/api/submissions/:id/generate-certificate", async (req, res) => {
 
     res.json({ success: true, data: updatedSubmission });
   } catch (error) {
+    console.error("Certificate generation error:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 });

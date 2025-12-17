@@ -1,16 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import jsPDF from "jspdf";
-import "jspdf-autotable";
-
-// Import PDF generator utility
-const COMPANY_INFO = {
-  name: "MAG Financial Services LLC",
-  address: "Dubai, United Arab Emirates",
-  phone: "+971 X XXXX XXXX",
-  email: "info@magfinancial.com",
-  website: "www.magfinancial.com",
-};
 
 const formatDate = (dateString) => {
   if (!dateString) return "N/A";
@@ -27,229 +16,6 @@ const formatAmount = (amount) => {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
-};
-
-const generateVerificationCertificate = (submission) => {
-  const doc = new jsPDF();
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 20;
-  let yPosition = 20;
-
-  // Header
-  doc.setFillColor(41, 128, 185);
-  doc.rect(0, 0, pageWidth, 40, "F");
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(20);
-  doc.setFont(undefined, "bold");
-  doc.text(COMPANY_INFO.name, pageWidth / 2, 18, { align: "center" });
-  doc.setFontSize(10);
-  doc.setFont(undefined, "normal");
-  doc.text("Investment Management & Financial Services", pageWidth / 2, 28, { align: "center" });
-
-  yPosition = 50;
-
-  // Title
-  doc.setTextColor(0, 0, 0);
-  doc.setFontSize(18);
-  doc.setFont(undefined, "bold");
-  doc.text("INVESTMENT CLOSURE VERIFICATION CERTIFICATE", pageWidth / 2, yPosition, { align: "center" });
-
-  yPosition += 15;
-
-  // Certificate Number
-  doc.setFontSize(10);
-  doc.setFont(undefined, "normal");
-  doc.setTextColor(100, 100, 100);
-  const certNumber = submission.certificateNumber || `CERT-${submission._id?.slice(-8).toUpperCase()}`;
-  const verificationDate = formatDate(submission.certificateGeneratedAt || new Date());
-  doc.text(`Certificate No: ${certNumber}`, margin, yPosition);
-  doc.text(`Verification Date: ${verificationDate}`, pageWidth - margin, yPosition, { align: "right" });
-
-  yPosition += 15;
-
-  // Verification Statement
-  doc.setDrawColor(41, 128, 185);
-  doc.setLineWidth(0.5);
-  doc.line(margin, yPosition, pageWidth - margin, yPosition);
-  yPosition += 10;
-
-  doc.setFontSize(11);
-  doc.setTextColor(0, 0, 0);
-  doc.setFont(undefined, "normal");
-
-  const verificationText = `This is to certify that ${COMPANY_INFO.name} has reviewed and verified the investment closure request submitted by the investor listed below. All documentation has been examined and found to be in order.`;
-  const splitText = doc.splitTextToSize(verificationText, pageWidth - (margin * 2));
-  doc.text(splitText, margin, yPosition);
-  yPosition += (splitText.length * 6) + 10;
-
-  // Investor Information
-  doc.setFillColor(240, 240, 240);
-  doc.rect(margin, yPosition, pageWidth - (margin * 2), 8, "F");
-  doc.setFontSize(12);
-  doc.setFont(undefined, "bold");
-  doc.setTextColor(41, 128, 185);
-  doc.text("INVESTOR INFORMATION", margin + 3, yPosition + 5.5);
-  yPosition += 12;
-
-  const investorInfo = [
-    ["Full Name", submission.personalInfo?.fullName || "N/A"],
-    ["Email Address", submission.personalInfo?.email || "N/A"],
-    ["Phone Number", submission.personalInfo?.phone || submission.personalInfo?.mobile || "N/A"],
-    ["Country", submission.personalInfo?.country || "N/A"],
-    ["City", submission.personalInfo?.city || "N/A"],
-  ];
-
-  doc.autoTable({
-    startY: yPosition,
-    head: [],
-    body: investorInfo,
-    theme: "plain",
-    margin: { left: margin, right: margin },
-    columnStyles: {
-      0: { fontStyle: "bold", cellWidth: 50, textColor: [80, 80, 80] },
-      1: { cellWidth: "auto", textColor: [0, 0, 0] },
-    },
-    styles: { fontSize: 10, cellPadding: 3 },
-  });
-
-  yPosition = doc.lastAutoTable.finalY + 10;
-
-  // Bank Details
-  doc.setFillColor(240, 240, 240);
-  doc.rect(margin, yPosition, pageWidth - (margin * 2), 8, "F");
-  doc.setFontSize(12);
-  doc.setFont(undefined, "bold");
-  doc.setTextColor(41, 128, 185);
-  doc.text("BANK ACCOUNT DETAILS", margin + 3, yPosition + 5.5);
-  yPosition += 12;
-
-  const bankInfo = [
-    ["Bank Name", submission.bankDetails?.bankName || "N/A"],
-    ["Account Holder", submission.bankDetails?.accountHolderName || "N/A"],
-    ["Account Number", submission.bankDetails?.accountNumber || "N/A"],
-    ["IBAN", submission.bankDetails?.iban || "N/A"],
-  ];
-
-  doc.autoTable({
-    startY: yPosition,
-    head: [],
-    body: bankInfo,
-    theme: "plain",
-    margin: { left: margin, right: margin },
-    columnStyles: {
-      0: { fontStyle: "bold", cellWidth: 50, textColor: [80, 80, 80] },
-      1: { cellWidth: "auto", textColor: [0, 0, 0] },
-    },
-    styles: { fontSize: 10, cellPadding: 3 },
-  });
-
-  yPosition = doc.lastAutoTable.finalY + 10;
-
-  // Investment Details
-  doc.setFillColor(240, 240, 240);
-  doc.rect(margin, yPosition, pageWidth - (margin * 2), 8, "F");
-  doc.setFontSize(12);
-  doc.setFont(undefined, "bold");
-  doc.setTextColor(41, 128, 185);
-  doc.text("INVESTMENT DETAILS", margin + 3, yPosition + 5.5);
-  yPosition += 12;
-
-  const investmentInfo = [
-    ["Reference Number", submission.investmentDetails?.referenceNumber || "N/A"],
-    ["Court Agreement Number", submission.courtAgreementNumber || "N/A"],
-    ["Investment Amount", `AED ${formatAmount(submission.investmentDetails?.amount)}`],
-    ["Investment Date", formatDate(submission.investmentDetails?.investmentDate)],
-    ["Duration", `${submission.investmentDetails?.duration || 0} months`],
-  ];
-
-  doc.autoTable({
-    startY: yPosition,
-    head: [],
-    body: investmentInfo,
-    theme: "plain",
-    margin: { left: margin, right: margin },
-    columnStyles: {
-      0: { fontStyle: "bold", cellWidth: 50, textColor: [80, 80, 80] },
-      1: { cellWidth: "auto", textColor: [0, 0, 0] },
-    },
-    styles: { fontSize: 10, cellPadding: 3 },
-  });
-
-  yPosition = doc.lastAutoTable.finalY + 10;
-
-  // Payment Summary
-  doc.setFillColor(46, 204, 113);
-  doc.rect(margin, yPosition, pageWidth - (margin * 2), 8, "F");
-  doc.setFontSize(12);
-  doc.setFont(undefined, "bold");
-  doc.setTextColor(255, 255, 255);
-  doc.text("PAYMENT SUMMARY", margin + 3, yPosition + 5.5);
-  yPosition += 12;
-
-  const totalReceived = submission.dividendHistory?.totalReceived || 0;
-  const investmentAmount = submission.investmentDetails?.amount || 0;
-  const amountToReturn = investmentAmount - totalReceived;
-
-  const paymentSummary = [
-    ["Total Investment Amount", `AED ${formatAmount(investmentAmount)}`],
-    ["Total Dividends Received", `AED ${formatAmount(totalReceived)}`],
-    ["Amount to be Returned", `AED ${formatAmount(amountToReturn)}`],
-  ];
-
-  doc.autoTable({
-    startY: yPosition,
-    head: [],
-    body: paymentSummary,
-    theme: "striped",
-    margin: { left: margin, right: margin },
-    columnStyles: {
-      0: { fontStyle: "bold", cellWidth: 70, textColor: [80, 80, 80] },
-      1: { cellWidth: "auto", textColor: [22, 101, 52], fontStyle: "bold", fontSize: 11 },
-    },
-    styles: { fontSize: 10, cellPadding: 4 },
-    headStyles: { fillColor: [240, 240, 240] },
-  });
-
-  yPosition = doc.lastAutoTable.finalY + 15;
-
-  // Signature Section
-  if (yPosition > pageHeight - 60) {
-    doc.addPage();
-    yPosition = 20;
-  }
-
-  const signatureY = yPosition + 15;
-  doc.setDrawColor(0, 0, 0);
-  doc.setLineWidth(0.3);
-  doc.line(margin, signatureY, margin + 60, signatureY);
-  doc.setFontSize(9);
-  doc.setFont(undefined, "bold");
-  doc.setTextColor(0, 0, 0);
-  doc.text("Authorized Signature", margin, signatureY + 5);
-  doc.setFont(undefined, "normal");
-  doc.setFontSize(8);
-  doc.setTextColor(100, 100, 100);
-  doc.text(COMPANY_INFO.name, margin, signatureY + 10);
-
-  doc.line(pageWidth - margin - 60, signatureY, pageWidth - margin, signatureY);
-  doc.setFontSize(9);
-  doc.setFont(undefined, "bold");
-  doc.setTextColor(0, 0, 0);
-  doc.text("Company Stamp", pageWidth - margin - 30, signatureY + 5, { align: "center" });
-
-  // Footer
-  const footerY = pageHeight - 15;
-  doc.setDrawColor(41, 128, 185);
-  doc.setLineWidth(0.5);
-  doc.line(margin, footerY - 5, pageWidth - margin, footerY - 5);
-  doc.setFontSize(8);
-  doc.setTextColor(100, 100, 100);
-  doc.setFont(undefined, "normal");
-  doc.text(COMPANY_INFO.address, pageWidth / 2, footerY, { align: "center" });
-  doc.text(`${COMPANY_INFO.phone} | ${COMPANY_INFO.email} | ${COMPANY_INFO.website}`, pageWidth / 2, footerY + 4, { align: "center" });
-
-  return doc;
 };
 
 const Certificates = () => {
@@ -279,21 +45,32 @@ const Certificates = () => {
 
   const handleDownloadCertificate = (submission) => {
     try {
-      const doc = generateVerificationCertificate(submission);
-      const fileName = `Investment_Verification_${submission.personalInfo?.fullName?.replace(/\s+/g, "_")}_${new Date().toISOString().split("T")[0]}.pdf`;
-      doc.save(fileName);
+      if (submission.certificatePdfUrl) {
+        // Download from S3
+        const link = document.createElement("a");
+        link.href = submission.certificatePdfUrl;
+        link.download = `Investment_Verification_${submission.certificateNumber}.pdf`;
+        link.target = "_blank";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        alert("Certificate PDF not available. Please contact support.");
+      }
     } catch (error) {
-      console.error("Error generating certificate:", error);
-      alert("Failed to generate certificate");
+      console.error("Error downloading certificate:", error);
+      alert("Failed to download certificate");
     }
   };
 
   const handleViewCertificate = (submission) => {
     try {
-      const doc = generateVerificationCertificate(submission);
-      const pdfBlob = doc.output("blob");
-      const pdfUrl = URL.createObjectURL(pdfBlob);
-      window.open(pdfUrl, "_blank");
+      if (submission.certificatePdfUrl) {
+        // Open S3 URL in new tab
+        window.open(submission.certificatePdfUrl, "_blank");
+      } else {
+        alert("Certificate PDF not available. Please contact support.");
+      }
     } catch (error) {
       console.error("Error viewing certificate:", error);
       alert("Failed to view certificate");
