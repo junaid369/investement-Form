@@ -17,8 +17,9 @@ const COLORS = {
   gold: [212, 175, 55],      // #D4AF37
   black: [10, 10, 10],        // #0a0a0a
   darkGray: [17, 17, 17],     // #111111
-  lightGray: [240, 240, 240], // #f0f0f0
+  lightGray: [245, 245, 245], // #f5f5f5
   white: [255, 255, 255],
+  tableHeader: [212, 175, 55, 0.1], // Gold with opacity
 };
 
 /**
@@ -45,7 +46,7 @@ const formatAmount = (amount) => {
 };
 
 /**
- * Generate Investment Verification Certificate PDF - Single Page Elegant Design
+ * Generate Investment Verification Certificate PDF - Professional Single Page Design
  * @param {Object} submission - The legal submission data
  * @returns {Buffer} - The generated PDF as buffer
  */
@@ -55,65 +56,65 @@ const generateVerificationCertificate = (submission) => {
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 15;
 
-  // ===== DECORATIVE BORDER =====
+  // ===== DECORATIVE DOUBLE BORDER =====
   doc.setDrawColor(...COLORS.gold);
-  doc.setLineWidth(0.5);
+  doc.setLineWidth(1);
   doc.rect(8, 8, pageWidth - 16, pageHeight - 16);
-  doc.setLineWidth(0.2);
-  doc.rect(10, 10, pageWidth - 20, pageHeight - 20);
+  doc.setLineWidth(0.3);
+  doc.rect(11, 11, pageWidth - 22, pageHeight - 22);
 
-  // ===== HEADER - ELEGANT BLACK & GOLD =====
-  let yPosition = 20;
+  // ===== HEADER - ELEGANT GOLD & BLACK =====
+  let yPosition = 25;
 
-  // Company Name - Gold
-  doc.setFont(undefined, "bold");
-  doc.setFontSize(22);
+  // Company Name - Bold Gold
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(24);
   doc.setTextColor(...COLORS.gold);
   doc.text(COMPANY_INFO.name, pageWidth / 2, yPosition, { align: "center" });
-  yPosition += 6;
+  yPosition += 7;
 
-  // Subtitle
+  // Subtitle - Black
   doc.setFontSize(10);
-  doc.setFont(undefined, "normal");
+  doc.setFont("helvetica", "normal");
   doc.setTextColor(...COLORS.black);
   doc.text(COMPANY_INFO.subtitle, pageWidth / 2, yPosition, { align: "center" });
-  yPosition += 4;
+  yPosition += 5;
 
-  // Powered By
+  // Powered By - Gray
   doc.setFontSize(8);
   doc.setTextColor(100, 100, 100);
   doc.text(COMPANY_INFO.poweredBy, pageWidth / 2, yPosition, { align: "center" });
-  yPosition += 10;
+  yPosition += 12;
 
-  // Gold Divider Line
+  // Gold Decorative Divider Line
   doc.setDrawColor(...COLORS.gold);
-  doc.setLineWidth(0.8);
-  doc.line(margin + 20, yPosition, pageWidth - margin - 20, yPosition);
-  yPosition += 8;
+  doc.setLineWidth(1);
+  doc.line(margin + 30, yPosition, pageWidth - margin - 30, yPosition);
+  yPosition += 10;
 
   // ===== CERTIFICATE TITLE =====
-  doc.setFontSize(18);
-  doc.setFont(undefined, "bold");
+  doc.setFontSize(20);
+  doc.setFont("helvetica", "bold");
   doc.setTextColor(...COLORS.gold);
   doc.text("INVESTMENT VERIFICATION CERTIFICATE", pageWidth / 2, yPosition, { align: "center" });
-  yPosition += 10;
+  yPosition += 12;
 
-  // Certificate Number & Date - Small elegant line
+  // Certificate Number & Date
   const certNumber = submission.certificateNumber || `CERT-${submission._id.toString().slice(-8).toUpperCase()}`;
   const verificationDate = formatDate(submission.certificateGeneratedAt || new Date());
 
   doc.setFontSize(9);
-  doc.setFont(undefined, "normal");
+  doc.setFont("helvetica", "normal");
   doc.setTextColor(80, 80, 80);
   doc.text(`Certificate No: ${certNumber}`, pageWidth / 2, yPosition, { align: "center" });
-  yPosition += 4;
+  yPosition += 5;
   doc.text(`Verification Date: ${verificationDate}`, pageWidth / 2, yPosition, { align: "center" });
-  yPosition += 10;
+  yPosition += 12;
 
-  // ===== MAIN VERIFICATION STATEMENT - ELEGANT PARAGRAPH =====
+  // ===== VERIFICATION STATEMENT - ELEGANT PARAGRAPH =====
   doc.setFontSize(10);
   doc.setTextColor(...COLORS.black);
-  doc.setFont(undefined, "normal");
+  doc.setFont("helvetica", "normal");
 
   const investorName = submission.personalInfo?.fullName || "N/A";
   const investmentAmount = formatAmount(submission.investmentDetails?.amount || 0);
@@ -127,17 +128,18 @@ const generateVerificationCertificate = (submission) => {
 
   const splitStatement = doc.splitTextToSize(statement, pageWidth - (margin * 2) - 10);
 
-  // Add subtle background for statement
-  doc.setFillColor(250, 250, 250);
-  const statementHeight = (splitStatement.length * 5) + 8;
-  doc.roundedRect(margin + 5, yPosition - 3, pageWidth - (margin * 2) - 10, statementHeight, 2, 2, "F");
+  // Subtle background box for statement
+  doc.setFillColor(252, 252, 250);
+  const statementHeight = (splitStatement.length * 5.5) + 8;
+  doc.roundedRect(margin + 5, yPosition - 3, pageWidth - (margin * 2) - 10, statementHeight, 3, 3, "F");
 
+  // Statement text
   doc.setTextColor(...COLORS.black);
   doc.text(splitStatement, margin + 8, yPosition + 2);
-  yPosition += statementHeight + 8;
+  yPosition += statementHeight + 10;
 
-  // ===== KEY DETAILS IN ELEGANT TABLE =====
-  const keyDetails = [
+  // ===== PROFESSIONAL TABLE WITH BETTER ALIGNMENT =====
+  const tableData = [
     ["Investor Name", investorName, "Investment Amount", `AED ${investmentAmount}`],
     ["Bank Account", accountNumber, "Bank Name", bankName],
     ["Investment Date", investmentDate, "Dividends Received", `AED ${totalDividends}`],
@@ -147,75 +149,106 @@ const generateVerificationCertificate = (submission) => {
   doc.autoTable({
     startY: yPosition,
     head: [],
-    body: keyDetails,
-    theme: "plain",
+    body: tableData,
+    theme: "grid",
     margin: { left: margin + 5, right: margin + 5 },
-    columnStyles: {
-      0: { fontStyle: "bold", cellWidth: 45, textColor: [80, 80, 80], fontSize: 9 },
-      1: { cellWidth: 50, textColor: COLORS.black, fontSize: 9 },
-      2: { fontStyle: "bold", cellWidth: 45, textColor: [80, 80, 80], fontSize: 9 },
-      3: { cellWidth: 50, textColor: COLORS.black, fontSize: 9, fontStyle: "bold" },
-    },
     styles: {
-      cellPadding: 2.5,
+      fontSize: 9,
+      cellPadding: 4,
       lineColor: COLORS.gold,
-      lineWidth: 0.1,
+      lineWidth: 0.3,
+      font: "helvetica",
     },
-    alternateRowStyles: {
-      fillColor: [252, 252, 252],
+    columnStyles: {
+      0: {
+        fontStyle: "bold",
+        cellWidth: 45,
+        textColor: [60, 60, 60],
+        halign: "left",
+        fillColor: [250, 248, 245],
+      },
+      1: {
+        cellWidth: 50,
+        textColor: COLORS.black,
+        halign: "left",
+        fillColor: COLORS.white,
+      },
+      2: {
+        fontStyle: "bold",
+        cellWidth: 45,
+        textColor: [60, 60, 60],
+        halign: "left",
+        fillColor: [250, 248, 245],
+      },
+      3: {
+        cellWidth: 50,
+        textColor: COLORS.black,
+        halign: "left",
+        fontStyle: "bold",
+        fillColor: COLORS.white,
+      },
+    },
+    headStyles: {
+      fillColor: COLORS.gold,
+      textColor: COLORS.white,
+      fontStyle: "bold",
     },
   });
 
-  yPosition = doc.lastAutoTable.finalY + 12;
+  yPosition = doc.lastAutoTable.finalY + 15;
 
-  // ===== SIGNATURE SECTION - ELEGANT =====
-  // Gold divider line
+  // ===== SIGNATURE SECTION =====
+  // Gold Divider
   doc.setDrawColor(...COLORS.gold);
-  doc.setLineWidth(0.5);
-  doc.line(margin + 20, yPosition, pageWidth - margin - 20, yPosition);
-  yPosition += 10;
+  doc.setLineWidth(0.8);
+  doc.line(margin + 30, yPosition, pageWidth - margin - 30, yPosition);
+  yPosition += 12;
 
-  // Signature and Stamp side by side
+  // Signature positions
   const signatureY = yPosition;
-  const leftX = margin + 30;
-  const rightX = pageWidth - margin - 50;
+  const leftX = margin + 35;
+  const rightX = pageWidth - margin - 55;
 
   // Left: Authorized Signature
   doc.setDrawColor(...COLORS.gold);
-  doc.setLineWidth(0.3);
-  doc.line(leftX, signatureY, leftX + 40, signatureY);
-  doc.setFontSize(9);
-  doc.setFont(undefined, "bold");
+  doc.setLineWidth(0.5);
+  doc.line(leftX, signatureY, leftX + 45, signatureY);
+
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "bold");
   doc.setTextColor(...COLORS.black);
-  doc.text("Authorized Signature", leftX + 20, signatureY + 5, { align: "center" });
-  doc.setFont(undefined, "normal");
+  doc.text("Authorized Signature", leftX + 22.5, signatureY + 6, { align: "center" });
+
+  doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(100, 100, 100);
   if (submission.verifiedBy) {
-    doc.text(`Verified by: ${submission.verifiedBy}`, leftX + 20, signatureY + 9, { align: "center" });
+    doc.text(`Verified by: ${submission.verifiedBy}`, leftX + 22.5, signatureY + 11, { align: "center" });
   }
 
-  // Right: Company Stamp
-  doc.line(rightX, signatureY, rightX + 40, signatureY);
-  doc.setFontSize(9);
-  doc.setFont(undefined, "bold");
+  // Right: Company Seal
+  doc.setDrawColor(...COLORS.gold);
+  doc.line(rightX, signatureY, rightX + 45, signatureY);
+
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "bold");
   doc.setTextColor(...COLORS.black);
-  doc.text("Company Seal", rightX + 20, signatureY + 5, { align: "center" });
+  doc.text("Company Seal", rightX + 22.5, signatureY + 6, { align: "center" });
 
   // ===== FOOTER - ELEGANT =====
-  const footerY = pageHeight - 18;
+  const footerY = pageHeight - 20;
 
-  // Gold divider line
+  // Gold decorative line
   doc.setDrawColor(...COLORS.gold);
-  doc.setLineWidth(0.5);
-  doc.line(margin + 20, footerY - 3, pageWidth - margin - 20, footerY - 3);
+  doc.setLineWidth(0.8);
+  doc.line(margin + 30, footerY - 4, pageWidth - margin - 30, footerY - 4);
 
   // Footer text
   doc.setFontSize(8);
   doc.setTextColor(100, 100, 100);
-  doc.setFont(undefined, "normal");
+  doc.setFont("helvetica", "normal");
   doc.text(COMPANY_INFO.address, pageWidth / 2, footerY + 2, { align: "center" });
-  doc.text(`${COMPANY_INFO.phone} | ${COMPANY_INFO.email} | ${COMPANY_INFO.website}`, pageWidth / 2, footerY + 6, { align: "center" });
+  doc.text(`${COMPANY_INFO.phone} | ${COMPANY_INFO.email} | ${COMPANY_INFO.website}`, pageWidth / 2, footerY + 7, { align: "center" });
 
   // Return PDF as buffer
   return Buffer.from(doc.output("arraybuffer"));
