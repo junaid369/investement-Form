@@ -176,7 +176,7 @@ const generateVerificationCertificate = (submission) => {
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...COLORS.gold);
   doc.text("VERIFIED INVESTMENT DETAILS", pageWidth / 2, yPosition, { align: "center" });
-  yPosition += 6;
+  yPosition += 8;
 
   const tableData = [
     ["Investor Name", investorName, "Investment Amount", `AED ${investmentAmount}`],
@@ -189,50 +189,57 @@ const generateVerificationCertificate = (submission) => {
     startY: yPosition,
     head: [],
     body: tableData,
-    theme: "plain",
-    margin: { left: margin + 10, right: margin + 10 },
+    theme: "grid",
+    margin: { left: margin + 8, right: margin + 8 },
     styles: {
-      fontSize: 9,
-      cellPadding: 5,
-      lineColor: [200, 200, 200],
-      lineWidth: 0.3,
+      fontSize: 8.5,
+      cellPadding: 4,
+      lineColor: COLORS.gold,
+      lineWidth: 0.5,
       font: "helvetica",
       textColor: COLORS.darkGray,
+      overflow: "linebreak",
+      cellWidth: "wrap",
     },
     columnStyles: {
       0: {
         fontStyle: "bold",
-        cellWidth: 42,
+        cellWidth: 44,
         halign: "left",
-        fillColor: [248, 246, 243],
+        valign: "middle",
+        fillColor: [250, 248, 245],
         textColor: [60, 60, 60],
       },
       1: {
-        cellWidth: 48,
+        cellWidth: 46,
         halign: "left",
+        valign: "middle",
         fillColor: COLORS.white,
         fontStyle: "normal",
+        textColor: COLORS.black,
       },
       2: {
         fontStyle: "bold",
-        cellWidth: 42,
+        cellWidth: 44,
         halign: "left",
-        fillColor: [248, 246, 243],
+        valign: "middle",
+        fillColor: [250, 248, 245],
         textColor: [60, 60, 60],
       },
       3: {
-        cellWidth: 48,
+        cellWidth: 46,
         halign: "left",
+        valign: "middle",
         fillColor: COLORS.white,
         fontStyle: "bold",
         textColor: COLORS.black,
       },
     },
     didDrawCell: (data) => {
-      // Add gold border to last row (settlement amount)
-      if (data.row.index === 3) {
+      // Add extra gold border to last row (settlement amount)
+      if (data.row.index === 3 && data.section === "body") {
         doc.setDrawColor(...COLORS.gold);
-        doc.setLineWidth(1);
+        doc.setLineWidth(1.5);
         doc.line(
           data.cell.x,
           data.cell.y + data.cell.height,
@@ -243,7 +250,7 @@ const generateVerificationCertificate = (submission) => {
     },
   });
 
-  yPosition = doc.lastAutoTable.finalY + 12;
+  yPosition = doc.lastAutoTable.finalY + 10;
 
   // ===== AUTHENTICITY & SIGNATURE SECTION =====
   // Authenticity statement
