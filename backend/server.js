@@ -164,6 +164,12 @@ const investorFormSchema = new mongoose.Schema(
     // Rejection reason (only when status is rejected)
     rejectionReason: { type: String },
     rejectedAt: { type: Date },
+
+    // Verification certificate info
+    certificateGenerated: { type: Boolean, default: false },
+    certificateGeneratedAt: { type: Date },
+    certificateNumber: { type: String },
+    verifiedBy: { type: String }, // Admin/Staff who verified
   },
   { timestamps: true }
 );
@@ -1097,6 +1103,55 @@ app.patch("/api/submissions/:id/status", async (req, res) => {
     }
 
     res.json({ success: true, data: submission });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Mark certificate as generated
+app.post("/api/submissions/:id/generate-certificate", async (req, res) => {
+  try {
+    const { verifiedBy } = req.body;
+    const submission = await InvestorForm.findById(req.params.id);
+
+    if (!submission) {
+      return res.status(404).json({ success: false, message: "Submission not found" });
+    }
+
+    if (submission.status !== "verified") {
+      return res.status(400).json({ success: false, message: "Only verified submissions can have certificates generated" });
+    }
+
+    // Generate certificate number
+    const certNumber = `CERT-${submission._id.toString().slice(-8).toUpperCase()}`;
+
+    const updatedSubmission = await InvestorForm.findByIdAndUpdate(
+      req.params.id,
+      {
+        certificateGenerated: true,
+        certificateGeneratedAt: new Date(),
+        certificateNumber: certNumber,
+        verifiedBy: verifiedBy || "System",
+      },
+      { new: true }
+    );
+
+    res.json({ success: true, data: updatedSubmission });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Get user's verified submissions with certificates (for investor portal)
+app.get("/api/user/:userId/certificates", async (req, res) => {
+  try {
+    const submissions = await InvestorForm.find({
+      userId: req.params.userId,
+      status: "verified",
+      certificateGenerated: true,
+    }).sort({ certificateGeneratedAt: -1 });
+
+    res.json({ success: true, data: submissions });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

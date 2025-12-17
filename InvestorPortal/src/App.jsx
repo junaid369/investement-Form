@@ -6,6 +6,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import InvestmentForm from './pages/InvestmentForm';
 import ViewSubmission from './pages/ViewSubmission';
+import Certificates from './pages/Certificates';
 import './index.css';
 
 function App() {
@@ -47,6 +48,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <ViewSubmission />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/certificates"
+            element={
+              <ProtectedRoute>
+                <Certificates />
               </ProtectedRoute>
             }
           />

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiFileText, FiClock, FiCheckCircle, FiXCircle, FiPlus, FiSearch, FiEye, FiEdit2, FiTrash2, FiAlertCircle } from 'react-icons/fi';
+import { FiFileText, FiClock, FiCheckCircle, FiXCircle, FiPlus, FiSearch, FiEye, FiEdit2, FiTrash2, FiAlertCircle, FiAward } from 'react-icons/fi';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { submissionAPI } from '../services/api';
@@ -90,9 +90,30 @@ const Dashboard = () => {
       <main className="dashboard-container">
         <div className="dashboard-header">
           <h2>My Submissions</h2>
-          <button className="new-submission-btn" onClick={() => navigate('/form')}>
-            <FiPlus /> New Submission
-          </button>
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <button
+              className="certificates-btn"
+              onClick={() => navigate('/certificates')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.625rem 1rem',
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: '500',
+                fontSize: '0.875rem',
+              }}
+            >
+              <FiAward /> My Certificates
+            </button>
+            <button className="new-submission-btn" onClick={() => navigate('/form')}>
+              <FiPlus /> New Submission
+            </button>
+          </div>
         </div>
 
         {/* Stats Cards */}
