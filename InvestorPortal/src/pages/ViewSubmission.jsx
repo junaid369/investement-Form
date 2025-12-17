@@ -433,6 +433,39 @@ const ViewSubmission = () => {
             </span>
           </div>
 
+          {/* Rejection Reason Alert */}
+          {status === 'rejected' && submission?.rejectionReason && (
+            <div style={{
+              background: '#FEF2F2',
+              border: '1px solid #FCA5A5',
+              borderRadius: '8px',
+              padding: '16px',
+              margin: '20px 30px',
+              display: 'flex',
+              gap: '12px',
+              alignItems: 'flex-start'
+            }}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: '2px' }}>
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <div>
+                <h4 style={{ color: '#991B1B', fontWeight: '600', marginBottom: '8px', fontSize: '1rem' }}>
+                  Submission Rejected
+                </h4>
+                <p style={{ color: '#7F1D1D', fontSize: '0.9rem', lineHeight: '1.5' }}>
+                  {submission.rejectionReason}
+                </p>
+                {submission.rejectedAt && (
+                  <p style={{ color: '#991B1B', fontSize: '0.8rem', marginTop: '8px', opacity: 0.8 }}>
+                    Rejected on: {formatDate(submission.rejectedAt)}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
           <div style={{ padding: '30px' }}>
             {/* Personal Information */}
             <div style={{ marginBottom: '40px' }}>

@@ -160,6 +160,10 @@ const investorFormSchema = new mongoose.Schema(
     submittedAt: { type: Date, default: Date.now },
     // draft = incomplete form, pending = complete form awaiting review
     status: { type: String, default: "draft", enum: ["draft", "pending", "verified", "rejected"] },
+
+    // Rejection reason (only when status is rejected)
+    rejectionReason: { type: String },
+    rejectedAt: { type: Date },
   },
   { timestamps: true }
 );
@@ -1064,15 +1068,34 @@ app.get("/api/submissions/:id", async (req, res) => {
 // Update submission status
 app.patch("/api/submissions/:id/status", async (req, res) => {
   try {
-    const { status } = req.body;
+    const { status, rejectionReason } = req.body;
+
+    // Build update object
+    const updateData = { status };
+
+    // If status is rejected, add rejection reason and timestamp
+    if (status === "rejected") {
+      if (!rejectionReason || !rejectionReason.trim()) {
+        return res.status(400).json({ success: false, message: "Rejection reason is required when rejecting a submission" });
+      }
+      updateData.rejectionReason = rejectionReason;
+      updateData.rejectedAt = new Date();
+    } else {
+      // Clear rejection data if status is not rejected
+      updateData.rejectionReason = null;
+      updateData.rejectedAt = null;
+    }
+
     const submission = await InvestorForm.findByIdAndUpdate(
       req.params.id,
-      { status },
+      updateData,
       { new: true }
     );
+
     if (!submission) {
       return res.status(404).json({ success: false, message: "Submission not found" });
     }
+
     res.json({ success: true, data: submission });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
