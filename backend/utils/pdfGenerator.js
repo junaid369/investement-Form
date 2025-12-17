@@ -276,57 +276,7 @@ const generateVerificationCertificate = (submission) => {
   doc.setDrawColor(...COLORS.gold);
   doc.setLineWidth(0.8);
   doc.line(margin + 25, yPosition, pageWidth - margin - 25, yPosition);
-  yPosition += 10;
-
-  // Signature section - side by side layout
-  const signatureY = yPosition;
-  const sigBoxWidth = 55;
-  const sigBoxHeight = 16;
-  const spacing = (pageWidth - (margin * 2) - (sigBoxWidth * 2)) / 3;
-  const leftSigX = margin + spacing;
-  const rightSigX = pageWidth - margin - spacing - sigBoxWidth;
-
-  // Left: Authorized Signature
-  doc.setDrawColor(...COLORS.gold);
-  doc.setLineWidth(0.7);
-  doc.setFillColor(255, 255, 255);
-  doc.roundedRect(leftSigX, signatureY, sigBoxWidth, sigBoxHeight, 2, 2, "FD");
-
-  // Signature line inside box
-  doc.setDrawColor(...COLORS.gold);
-  doc.setLineWidth(0.5);
-  doc.line(leftSigX + 6, signatureY + 8, leftSigX + sigBoxWidth - 6, signatureY + 8);
-
-  doc.setFontSize(7.5);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...COLORS.black);
-  doc.text("AUTHORIZED BY", leftSigX + sigBoxWidth / 2, signatureY + 12, { align: "center" });
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(6.5);
-  doc.setTextColor(90, 90, 90);
-  doc.text(verificationDate, leftSigX + sigBoxWidth / 2, signatureY + sigBoxHeight - 1, { align: "center" });
-
-  // Right: Company Seal
-  doc.setDrawColor(...COLORS.gold);
-  doc.setLineWidth(0.7);
-  doc.setFillColor(255, 255, 255);
-  doc.roundedRect(rightSigX, signatureY, sigBoxWidth, sigBoxHeight, 2, 2, "FD");
-
-  // Signature line inside box
-  doc.setDrawColor(...COLORS.gold);
-  doc.setLineWidth(0.5);
-  doc.line(rightSigX + 6, signatureY + 8, rightSigX + sigBoxWidth - 6, signatureY + 8);
-
-  doc.setFontSize(7.5);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...COLORS.black);
-  doc.text("COMPANY SEAL", rightSigX + sigBoxWidth / 2, signatureY + 12, { align: "center" });
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(6.5);
-  doc.setTextColor(...COLORS.gold);
-  doc.text("Dubai, UAE", rightSigX + sigBoxWidth / 2, signatureY + sigBoxHeight - 1, { align: "center" });
+  yPosition += 3;
 
   // ===== FOOTER - CLEAN & PROFESSIONAL =====
   // Bottom gold bar FIRST (at the very bottom)
