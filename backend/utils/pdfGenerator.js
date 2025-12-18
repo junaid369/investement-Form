@@ -481,12 +481,17 @@ const generateDiscrepancyReport = (submission, erpData, discrepancyDetails) => {
     yPosition += 8;
 
     const portfolio = erpData.matchedPortfolio;
+    // Use portfolioTotalInvestment (sum of all Initial + Topup investments) or fallback to totalInvestedAmount
+    const portfolioTotalAmount = portfolio.portfolioTotalInvestment || portfolio.totalInvestedAmount || portfolio.dblInvestmentAmount || 0;
+    const investments = portfolio.investments || [];
+    const investmentCount = investments.length;
+
     const portfolioData = [
       ["Portfolio Ref", portfolio.portfolioRefNo || "N/A"],
-      ["Investment Amount", `AED ${formatAmount(portfolio.dblInvestmentAmount)}`],
-      ["Investment Date", formatDate(portfolio.dtInvestmentDate)],
+      ["Total Invested (All)", `AED ${formatAmount(portfolioTotalAmount)}`],
+      ["Investment Count", `${investmentCount} investment(s)`],
       ["Duration", `${portfolio.intDuration || 0} months`],
-      ["ROI %", `${portfolio.dblROI || 0}%`],
+      ["ROI %", `${portfolio.dblROI || portfolio.percentage || 0}%`],
     ];
 
     doc.autoTable({
@@ -506,6 +511,42 @@ const generateDiscrepancyReport = (submission, erpData, discrepancyDetails) => {
     });
 
     yPosition = doc.lastAutoTable.finalY + 10;
+
+    // Show individual investments breakdown if available
+    if (investments.length > 1) {
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(75, 85, 99);
+      doc.text("Investment Breakdown:", margin, yPosition);
+      yPosition += 6;
+
+      const investmentsBreakdown = investments.map(inv => [
+        inv.investmentRefNo || "N/A",
+        inv.investmentType || "Initial",
+        `AED ${formatAmount(inv.amount)}`,
+        formatDate(inv.startDate || inv.createdAt)
+      ]);
+
+      doc.autoTable({
+        startY: yPosition,
+        head: [["Ref No", "Type", "Amount", "Date"]],
+        body: investmentsBreakdown,
+        theme: "grid",
+        margin: { left: margin, right: margin },
+        headStyles: {
+          fillColor: [209, 250, 229],
+          textColor: [22, 101, 52],
+          fontStyle: "bold",
+          fontSize: 8,
+        },
+        bodyStyles: {
+          fontSize: 8,
+          textColor: [50, 50, 50],
+        },
+      });
+
+      yPosition = doc.lastAutoTable.finalY + 10;
+    }
   }
 
   // ===== Footer =====
