@@ -1023,9 +1023,12 @@ app.get("/api/submissions", async (req, res) => {
       ];
     }
 
-    // Status filter
+    // Status filter - exclude drafts by default unless specifically requested
     if (status && status !== "all") {
       query.status = status;
+    } else {
+      // Don't show drafts in admin panel by default
+      query.status = { $ne: "draft" };
     }
 
     // Sort
