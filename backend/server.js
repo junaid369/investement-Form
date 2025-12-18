@@ -159,11 +159,41 @@ const investorFormSchema = new mongoose.Schema(
     // Meta
     submittedAt: { type: Date, default: Date.now },
     // draft = incomplete form, pending = complete form awaiting review
-    status: { type: String, default: "draft", enum: ["draft", "pending", "verified", "rejected"] },
+    status: { type: String, default: "draft", enum: ["draft", "pending", "verified", "rejected", "discrepancy"] },
 
     // Rejection reason (only when status is rejected)
     rejectionReason: { type: String },
     rejectedAt: { type: Date },
+
+    // Discrepancy details (only when status is discrepancy)
+    discrepancyDetails: {
+      investmentAmount: {
+        claimed: { type: Number },
+        actual: { type: Number },
+        difference: { type: Number },
+      },
+      investmentDate: {
+        claimed: { type: Date },
+        actual: { type: Date },
+      },
+      dividendAmount: {
+        claimed: { type: Number },
+        actual: { type: Number },
+        difference: { type: Number },
+      },
+      duration: {
+        claimed: { type: String },
+        actual: { type: String },
+      },
+      referenceNumber: {
+        claimed: { type: String },
+        actual: { type: String },
+      },
+      adminNotes: { type: String },
+      reportedAt: { type: Date },
+      reportedBy: { type: String },
+    },
+    discrepancyPdfUrl: { type: String }, // S3 URL for the discrepancy report PDF
 
     // Verification certificate info
     certificateGenerated: { type: Boolean, default: false },
@@ -1078,7 +1108,7 @@ app.get("/api/submissions/:id", async (req, res) => {
 // Update submission status
 app.patch("/api/submissions/:id/status", async (req, res) => {
   try {
-    const { status, rejectionReason } = req.body;
+    const { status, rejectionReason, discrepancyDetails } = req.body;
 
     // Build update object
     const updateData = { status };
@@ -1090,10 +1120,26 @@ app.patch("/api/submissions/:id/status", async (req, res) => {
       }
       updateData.rejectionReason = rejectionReason;
       updateData.rejectedAt = new Date();
-    } else {
-      // Clear rejection data if status is not rejected
+      // Clear discrepancy data
+      updateData.discrepancyDetails = null;
+      updateData.discrepancyPdfUrl = null;
+    } else if (status === "discrepancy") {
+      // Handle discrepancy status
+      if (discrepancyDetails) {
+        updateData.discrepancyDetails = {
+          ...discrepancyDetails,
+          reportedAt: new Date(),
+        };
+      }
+      // Clear rejection data
       updateData.rejectionReason = null;
       updateData.rejectedAt = null;
+    } else {
+      // Clear rejection and discrepancy data if status is not rejected or discrepancy
+      updateData.rejectionReason = null;
+      updateData.rejectedAt = null;
+      updateData.discrepancyDetails = null;
+      updateData.discrepancyPdfUrl = null;
     }
 
     const submission = await InvestorForm.findByIdAndUpdate(
@@ -1171,6 +1217,66 @@ app.post("/api/submissions/:id/generate-certificate", async (req, res) => {
     res.json({ success: true, data: updatedSubmission });
   } catch (error) {
     console.error("Certificate generation error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Generate discrepancy report PDF and upload to S3
+app.post("/api/submissions/:id/generate-discrepancy-report", async (req, res) => {
+  try {
+    const { discrepancyDetails, erpData, generatedBy } = req.body;
+    const submission = await InvestorForm.findById(req.params.id);
+
+    if (!submission) {
+      return res.status(404).json({ success: false, message: "Submission not found" });
+    }
+
+    // Generate discrepancy report PDF
+    const { generateDiscrepancyReport } = require("./utils/pdfGenerator");
+    const pdfBuffer = generateDiscrepancyReport(submission, erpData, discrepancyDetails);
+
+    // Upload to S3
+    const reportNumber = `DISC-${submission._id.toString().slice(-8).toUpperCase()}`;
+    const fileName = `discrepancy-reports/${reportNumber}_${submission.personalInfo?.fullName?.replace(/\s+/g, "_")}_${Date.now()}.pdf`;
+    const uploadParams = {
+      Bucket: BUCKET_NAME,
+      Key: fileName,
+      Body: pdfBuffer,
+      ContentType: "application/pdf",
+    };
+
+    const command = new PutObjectCommand(uploadParams);
+    await s3Client.send(command);
+
+    // Construct S3 URL
+    const s3Url = CLOUDFRONT_URL
+      ? `${CLOUDFRONT_URL}/${fileName}`
+      : `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
+
+    // Update submission with discrepancy details and PDF URL
+    const updatedSubmission = await InvestorForm.findByIdAndUpdate(
+      req.params.id,
+      {
+        status: "discrepancy",
+        discrepancyDetails: {
+          ...discrepancyDetails,
+          reportedAt: new Date(),
+          reportedBy: generatedBy || "Admin",
+        },
+        discrepancyPdfUrl: s3Url,
+      },
+      { new: true }
+    );
+
+    res.json({
+      success: true,
+      data: {
+        ...updatedSubmission.toObject(),
+        discrepancyPdfUrl: s3Url,
+      }
+    });
+  } catch (error) {
+    console.error("Discrepancy report generation error:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 });

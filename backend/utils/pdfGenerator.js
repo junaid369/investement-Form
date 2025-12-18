@@ -302,6 +302,230 @@ const generateVerificationCertificate = (submission) => {
   return Buffer.from(doc.output("arraybuffer"));
 };
 
+/**
+ * Generate Discrepancy Report PDF
+ * @param {Object} submission - The submission data
+ * @param {Object} erpData - The ERP data (portfolios, dividends, etc.)
+ * @param {Object} discrepancyDetails - The discrepancy details
+ * @returns {Buffer} - The generated PDF as buffer
+ */
+const generateDiscrepancyReport = (submission, erpData, discrepancyDetails) => {
+  const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 15;
+
+  // ===== HEADER - Warning Style =====
+  doc.setFillColor(254, 243, 199); // Light yellow background
+  doc.rect(0, 0, pageWidth, 40, "F");
+
+  // Warning icon (triangle) - simplified
+  doc.setFillColor(245, 158, 11);
+  doc.triangle(pageWidth / 2 - 8, 12, pageWidth / 2 + 8, 12, pageWidth / 2, 28, "F");
+  doc.setFillColor(254, 243, 199);
+  doc.setFontSize(14);
+  doc.setTextColor(120, 53, 15);
+  doc.text("!", pageWidth / 2, 23, { align: "center" });
+
+  // Title
+  doc.setFontSize(18);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(146, 64, 14);
+  doc.text("DISCREPANCY REPORT", pageWidth / 2, 38, { align: "center" });
+
+  let yPosition = 50;
+
+  // ===== Report Info Box =====
+  doc.setDrawColor(245, 158, 11);
+  doc.setLineWidth(0.5);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(margin, yPosition, pageWidth - margin * 2, 25, 2, 2, "FD");
+
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(80, 80, 80);
+
+  const reportNumber = `DISC-${submission._id.toString().slice(-8).toUpperCase()}`;
+  const reportDate = formatDate(new Date());
+  const investorName = submission.personalInfo?.fullName || "N/A";
+
+  doc.text(`Report Number: ${reportNumber}`, margin + 5, yPosition + 8);
+  doc.text(`Date: ${reportDate}`, margin + 5, yPosition + 15);
+  doc.text(`Investor: ${investorName}`, pageWidth / 2, yPosition + 8);
+  doc.text(`Court Agreement: ${submission.courtAgreementNumber || "N/A"}`, pageWidth / 2, yPosition + 15);
+
+  yPosition += 35;
+
+  // ===== Discrepancy Notice =====
+  doc.setFillColor(254, 243, 199);
+  doc.roundedRect(margin, yPosition, pageWidth - margin * 2, 18, 2, 2, "F");
+
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "italic");
+  doc.setTextColor(146, 64, 14);
+  const noticeText = "The following discrepancies have been identified between the investor's claimed information and our official records. Please review carefully.";
+  const splitNotice = doc.splitTextToSize(noticeText, pageWidth - margin * 2 - 10);
+  doc.text(splitNotice, margin + 5, yPosition + 7);
+
+  yPosition += 28;
+
+  // ===== Discrepancy Details Table =====
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(120, 53, 15);
+  doc.text("Discrepancy Details", margin, yPosition);
+  yPosition += 8;
+
+  // Build table data
+  const tableData = [];
+
+  if (discrepancyDetails.investmentAmount) {
+    tableData.push([
+      "Investment Amount",
+      `AED ${formatAmount(discrepancyDetails.investmentAmount.claimed)}`,
+      `AED ${formatAmount(discrepancyDetails.investmentAmount.actual)}`,
+      `AED ${formatAmount(discrepancyDetails.investmentAmount.difference)}`
+    ]);
+  }
+
+  if (discrepancyDetails.investmentDate) {
+    tableData.push([
+      "Investment Date",
+      formatDate(discrepancyDetails.investmentDate.claimed),
+      formatDate(discrepancyDetails.investmentDate.actual),
+      "-"
+    ]);
+  }
+
+  if (discrepancyDetails.dividendAmount) {
+    tableData.push([
+      "Total Dividends",
+      `AED ${formatAmount(discrepancyDetails.dividendAmount.claimed)}`,
+      `AED ${formatAmount(discrepancyDetails.dividendAmount.actual)}`,
+      `AED ${formatAmount(discrepancyDetails.dividendAmount.difference)}`
+    ]);
+  }
+
+  if (discrepancyDetails.duration) {
+    tableData.push([
+      "Duration",
+      `${discrepancyDetails.duration.claimed} months`,
+      `${discrepancyDetails.duration.actual} months`,
+      "-"
+    ]);
+  }
+
+  if (discrepancyDetails.referenceNumber) {
+    tableData.push([
+      "Reference Number",
+      discrepancyDetails.referenceNumber.claimed || "Not provided",
+      discrepancyDetails.referenceNumber.actual || "N/A",
+      "-"
+    ]);
+  }
+
+  if (tableData.length > 0) {
+    doc.autoTable({
+      startY: yPosition,
+      head: [["Field", "Investor Claim", "Our Records", "Difference"]],
+      body: tableData,
+      theme: "grid",
+      margin: { left: margin, right: margin },
+      headStyles: {
+        fillColor: [245, 158, 11],
+        textColor: [255, 255, 255],
+        fontStyle: "bold",
+        fontSize: 9,
+      },
+      bodyStyles: {
+        fontSize: 9,
+        textColor: [50, 50, 50],
+      },
+      columnStyles: {
+        0: { fontStyle: "bold", fillColor: [254, 252, 232] },
+        1: { fillColor: [224, 242, 254], textColor: [3, 105, 161] },
+        2: { fillColor: [220, 252, 231], textColor: [22, 101, 52] },
+        3: { fillColor: [254, 226, 226], textColor: [153, 27, 27] },
+      },
+    });
+
+    yPosition = doc.lastAutoTable.finalY + 15;
+  }
+
+  // ===== Admin Notes =====
+  if (discrepancyDetails.adminNotes) {
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(120, 53, 15);
+    doc.text("Reviewer Notes", margin, yPosition);
+    yPosition += 6;
+
+    doc.setDrawColor(245, 158, 11);
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(margin, yPosition, pageWidth - margin * 2, 20, 2, 2, "FD");
+
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(55, 65, 81);
+    const splitNotes = doc.splitTextToSize(discrepancyDetails.adminNotes, pageWidth - margin * 2 - 10);
+    doc.text(splitNotes, margin + 5, yPosition + 7);
+
+    yPosition += 28;
+  }
+
+  // ===== ERP Portfolio Summary (if available) =====
+  if (erpData && erpData.matchedPortfolio) {
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(22, 101, 52);
+    doc.text("Matched Portfolio from ERP System", margin, yPosition);
+    yPosition += 8;
+
+    const portfolio = erpData.matchedPortfolio;
+    const portfolioData = [
+      ["Portfolio Ref", portfolio.portfolioRefNo || "N/A"],
+      ["Investment Amount", `AED ${formatAmount(portfolio.dblInvestmentAmount)}`],
+      ["Investment Date", formatDate(portfolio.dtInvestmentDate)],
+      ["Duration", `${portfolio.intDuration || 0} months`],
+      ["ROI %", `${portfolio.dblROI || 0}%`],
+    ];
+
+    doc.autoTable({
+      startY: yPosition,
+      head: [],
+      body: portfolioData,
+      theme: "plain",
+      margin: { left: margin, right: margin },
+      styles: {
+        fontSize: 9,
+        cellPadding: 3,
+      },
+      columnStyles: {
+        0: { fontStyle: "bold", cellWidth: 50, textColor: [75, 85, 99] },
+        1: { textColor: [22, 101, 52] },
+      },
+    });
+
+    yPosition = doc.lastAutoTable.finalY + 10;
+  }
+
+  // ===== Footer =====
+  const footerY = doc.internal.pageSize.getHeight() - 25;
+
+  doc.setDrawColor(245, 158, 11);
+  doc.setLineWidth(0.5);
+  doc.line(margin, footerY, pageWidth - margin, footerY);
+
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(107, 114, 128);
+  doc.text("This report is generated by Matajar Group Legal Review System.", pageWidth / 2, footerY + 8, { align: "center" });
+  doc.text(`Generated on: ${formatDate(new Date())}`, pageWidth / 2, footerY + 14, { align: "center" });
+
+  // Return PDF as buffer
+  return Buffer.from(doc.output("arraybuffer"));
+};
+
 module.exports = {
   generateVerificationCertificate,
+  generateDiscrepancyReport,
 };
