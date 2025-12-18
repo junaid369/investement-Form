@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiFileText, FiClock, FiCheckCircle, FiXCircle, FiPlus, FiSearch, FiEye, FiEdit2, FiTrash2, FiAlertCircle, FiAward } from 'react-icons/fi';
+import { FiFileText, FiClock, FiCheckCircle, FiXCircle, FiPlus, FiSearch, FiEye, FiEdit2, FiTrash2, FiAlertCircle, FiAward, FiAlertTriangle } from 'react-icons/fi';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { submissionAPI } from '../services/api';
@@ -14,6 +14,7 @@ const Dashboard = () => {
     pending: 0,
     verified: 0,
     rejected: 0,
+    discrepancy: 0,
   });
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -45,6 +46,7 @@ const Dashboard = () => {
           pending: all.filter(s => s.status === 'pending').length,
           verified: all.filter(s => s.status === 'verified').length,
           rejected: all.filter(s => s.status === 'rejected').length,
+          discrepancy: all.filter(s => s.status === 'discrepancy').length,
         });
       }
     } catch (error) {
@@ -161,6 +163,15 @@ const Dashboard = () => {
             <div className="stat-info">
               <h3>{stats.rejected}</h3>
               <p>Rejected</p>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon discrepancy">
+              <FiAlertTriangle />
+            </div>
+            <div className="stat-info">
+              <h3>{stats.discrepancy}</h3>
+              <p>Needs Clarification</p>
             </div>
           </div>
         </div>

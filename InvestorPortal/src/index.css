@@ -446,6 +446,11 @@ body {
   color: #9ca3af;
 }
 
+.stat-icon.discrepancy {
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+}
+
 .stat-info h3 {
   font-size: 2rem;
   color: var(--text-light);
@@ -585,6 +590,11 @@ body {
 .status-badge.draft {
   background: rgba(150, 150, 150, 0.2);
   color: #999;
+}
+
+.status-badge.discrepancy {
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
 }
 
 /* Action Buttons */

@@ -466,6 +466,212 @@ const ViewSubmission = () => {
             </div>
           )}
 
+          {/* Discrepancy Alert */}
+          {status === 'discrepancy' && (
+            <div style={{
+              background: '#FFFBEB',
+              border: '2px solid #F59E0B',
+              borderRadius: '8px',
+              padding: '20px',
+              margin: '20px 30px',
+            }}>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', marginBottom: '16px' }}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                  <line x1="12" y1="9" x2="12" y2="13"></line>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                <div>
+                  <h4 style={{ color: '#92400E', fontWeight: '700', marginBottom: '4px', fontSize: '1.1rem' }}>
+                    Clarification Required
+                  </h4>
+                  <p style={{ color: '#A16207', fontSize: '0.9rem' }}>
+                    We found discrepancies between your submission and our records. Please review the details below.
+                  </p>
+                </div>
+              </div>
+
+              {/* Discrepancy Details Table */}
+              {submission.discrepancyDetails && (
+                <div style={{
+                  background: 'white',
+                  borderRadius: '8px',
+                  padding: '16px',
+                  marginBottom: '16px'
+                }}>
+                  <h5 style={{ color: '#92400E', fontWeight: '600', marginBottom: '12px', fontSize: '0.95rem' }}>
+                    Discrepancy Details
+                  </h5>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {submission.discrepancyDetails.investmentAmount && (
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 1fr 1fr',
+                        gap: '10px',
+                        padding: '10px',
+                        background: '#FEF3C7',
+                        borderRadius: '6px'
+                      }}>
+                        <div>
+                          <span style={{ fontSize: '0.75rem', color: '#92400E', display: 'block' }}>Field</span>
+                          <span style={{ fontWeight: '600', color: '#78350F' }}>Investment Amount</span>
+                        </div>
+                        <div>
+                          <span style={{ fontSize: '0.75rem', color: '#0369A1', display: 'block' }}>Your Claim</span>
+                          <span style={{ fontWeight: '600', color: '#0369A1' }}>AED {formatAmount(submission.discrepancyDetails.investmentAmount.claimed)}</span>
+                        </div>
+                        <div>
+                          <span style={{ fontSize: '0.75rem', color: '#166534', display: 'block' }}>Our Records</span>
+                          <span style={{ fontWeight: '600', color: '#166534' }}>AED {formatAmount(submission.discrepancyDetails.investmentAmount.actual)}</span>
+                        </div>
+                      </div>
+                    )}
+                    {submission.discrepancyDetails.investmentDate && (
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 1fr 1fr',
+                        gap: '10px',
+                        padding: '10px',
+                        background: '#FEF3C7',
+                        borderRadius: '6px'
+                      }}>
+                        <div>
+                          <span style={{ fontSize: '0.75rem', color: '#92400E', display: 'block' }}>Field</span>
+                          <span style={{ fontWeight: '600', color: '#78350F' }}>Investment Date</span>
+                        </div>
+                        <div>
+                          <span style={{ fontSize: '0.75rem', color: '#0369A1', display: 'block' }}>Your Claim</span>
+                          <span style={{ fontWeight: '600', color: '#0369A1' }}>{formatDate(submission.discrepancyDetails.investmentDate.claimed)}</span>
+                        </div>
+                        <div>
+                          <span style={{ fontSize: '0.75rem', color: '#166534', display: 'block' }}>Our Records</span>
+                          <span style={{ fontWeight: '600', color: '#166534' }}>{formatDate(submission.discrepancyDetails.investmentDate.actual)}</span>
+                        </div>
+                      </div>
+                    )}
+                    {submission.discrepancyDetails.dividendAmount && (
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 1fr 1fr',
+                        gap: '10px',
+                        padding: '10px',
+                        background: '#FEF3C7',
+                        borderRadius: '6px'
+                      }}>
+                        <div>
+                          <span style={{ fontSize: '0.75rem', color: '#92400E', display: 'block' }}>Field</span>
+                          <span style={{ fontWeight: '600', color: '#78350F' }}>Total Dividends</span>
+                        </div>
+                        <div>
+                          <span style={{ fontSize: '0.75rem', color: '#0369A1', display: 'block' }}>Your Claim</span>
+                          <span style={{ fontWeight: '600', color: '#0369A1' }}>AED {formatAmount(submission.discrepancyDetails.dividendAmount.claimed)}</span>
+                        </div>
+                        <div>
+                          <span style={{ fontSize: '0.75rem', color: '#166534', display: 'block' }}>Our Records</span>
+                          <span style={{ fontWeight: '600', color: '#166534' }}>AED {formatAmount(submission.discrepancyDetails.dividendAmount.actual)}</span>
+                        </div>
+                      </div>
+                    )}
+                    {submission.discrepancyDetails.duration && (
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 1fr 1fr',
+                        gap: '10px',
+                        padding: '10px',
+                        background: '#FEF3C7',
+                        borderRadius: '6px'
+                      }}>
+                        <div>
+                          <span style={{ fontSize: '0.75rem', color: '#92400E', display: 'block' }}>Field</span>
+                          <span style={{ fontWeight: '600', color: '#78350F' }}>Duration</span>
+                        </div>
+                        <div>
+                          <span style={{ fontSize: '0.75rem', color: '#0369A1', display: 'block' }}>Your Claim</span>
+                          <span style={{ fontWeight: '600', color: '#0369A1' }}>{submission.discrepancyDetails.duration.claimed} months</span>
+                        </div>
+                        <div>
+                          <span style={{ fontSize: '0.75rem', color: '#166534', display: 'block' }}>Our Records</span>
+                          <span style={{ fontWeight: '600', color: '#166534' }}>{submission.discrepancyDetails.duration.actual} months</span>
+                        </div>
+                      </div>
+                    )}
+                    {submission.discrepancyDetails.referenceNumber && (
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 1fr 1fr',
+                        gap: '10px',
+                        padding: '10px',
+                        background: '#FEF3C7',
+                        borderRadius: '6px'
+                      }}>
+                        <div>
+                          <span style={{ fontSize: '0.75rem', color: '#92400E', display: 'block' }}>Field</span>
+                          <span style={{ fontWeight: '600', color: '#78350F' }}>Reference Number</span>
+                        </div>
+                        <div>
+                          <span style={{ fontSize: '0.75rem', color: '#0369A1', display: 'block' }}>Your Claim</span>
+                          <span style={{ fontWeight: '600', color: '#0369A1' }}>{submission.discrepancyDetails.referenceNumber.claimed || 'Not provided'}</span>
+                        </div>
+                        <div>
+                          <span style={{ fontSize: '0.75rem', color: '#166534', display: 'block' }}>Our Records</span>
+                          <span style={{ fontWeight: '600', color: '#166534' }}>{submission.discrepancyDetails.referenceNumber.actual || 'N/A'}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Admin Notes */}
+                  {submission.discrepancyDetails.adminNotes && (
+                    <div style={{
+                      marginTop: '16px',
+                      padding: '12px',
+                      background: '#F3F4F6',
+                      borderRadius: '6px',
+                      borderLeft: '4px solid #F59E0B'
+                    }}>
+                      <span style={{ fontSize: '0.8rem', color: '#6B7280', display: 'block', marginBottom: '4px' }}>Note from Reviewer:</span>
+                      <p style={{ color: '#374151', fontSize: '0.9rem', lineHeight: '1.5' }}>
+                        {submission.discrepancyDetails.adminNotes}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Action Required */}
+              <div style={{
+                background: '#EFF6FF',
+                border: '1px solid #BFDBFE',
+                borderRadius: '8px',
+                padding: '16px'
+              }}>
+                <h5 style={{ color: '#1E40AF', fontWeight: '600', marginBottom: '10px', fontSize: '0.95rem' }}>
+                  What You Need To Do
+                </h5>
+                <ul style={{
+                  color: '#1E40AF',
+                  fontSize: '0.85rem',
+                  lineHeight: '1.8',
+                  paddingLeft: '20px',
+                  margin: 0
+                }}>
+                  <li>Review the discrepancies listed above carefully</li>
+                  <li>Gather any supporting documents (bank statements, receipts, agreements)</li>
+                  <li>If you have documents to upload, please contact our support team</li>
+                  <li>If you agree with our records, you can acknowledge the corrected amounts</li>
+                </ul>
+                <p style={{
+                  marginTop: '12px',
+                  fontSize: '0.8rem',
+                  color: '#6B7280',
+                  fontStyle: 'italic'
+                }}>
+                  Please respond within 14 days to avoid delays in processing your request.
+                </p>
+              </div>
+            </div>
+          )}
+
           <div style={{ padding: '30px' }}>
             {/* Personal Information */}
             <div style={{ marginBottom: '40px' }}>
