@@ -220,11 +220,17 @@ const investorFormSchema = new mongoose.Schema(
         branchName: { type: String, enum: ['matched', 'mismatched', 'pending'], default: 'pending' },
         iban: { type: String, enum: ['matched', 'mismatched', 'pending'], default: 'pending' },
       },
+      investmentDetails: {
+        amount: { type: String, enum: ['matched', 'mismatched', 'pending'], default: 'pending' },
+        investmentDate: { type: String, enum: ['matched', 'mismatched', 'pending'], default: 'pending' },
+        duration: { type: String, enum: ['matched', 'mismatched', 'pending'], default: 'pending' },
+        dividendsReceived: { type: String, enum: ['matched', 'mismatched', 'pending'], default: 'pending' },
+      },
     },
     // Overall matching statistics
     matchingPercentage: { type: Number, default: 0, min: 0, max: 100 }, // Calculated percentage
     verifiedFieldsCount: { type: Number, default: 0 }, // Number of matched fields
-    totalFieldsCount: { type: Number, default: 12 }, // Total verifiable fields (7 personal + 5 bank)
+    totalFieldsCount: { type: Number, default: 16 }, // Total verifiable fields (7 personal + 5 bank + 4 investment)
     lastVerificationUpdate: { type: Date }, // When field verifications were last updated
     verificationCompletedBy: { type: String }, // Admin who completed the verification
   },
@@ -1196,6 +1202,7 @@ app.patch("/api/submissions/:id/field-verifications", async (req, res) => {
     // Calculate matching percentage
     const personalInfoFields = fieldVerifications.personalInfo || {};
     const bankDetailsFields = fieldVerifications.bankDetails || {};
+    const investmentDetailsFields = fieldVerifications.investmentDetails || {};
 
     let matchedCount = 0;
     let totalCount = 0;
@@ -1208,6 +1215,12 @@ app.patch("/api/submissions/:id/field-verifications", async (req, res) => {
 
     // Count bank details matches
     Object.values(bankDetailsFields).forEach(status => {
+      totalCount++;
+      if (status === 'matched') matchedCount++;
+    });
+
+    // Count investment details matches
+    Object.values(investmentDetailsFields).forEach(status => {
       totalCount++;
       if (status === 'matched') matchedCount++;
     });
