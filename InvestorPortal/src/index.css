@@ -1447,3 +1447,39 @@ body {
     font-size: 0.85rem;
   }
 }
+
+/* ===== MATCHING PERCENTAGE BADGE ===== */
+.matching-badge {
+  display: inline-block;
+  padding: 0.35rem 0.85rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-align: center;
+  min-width: 55px;
+  transition: all 0.2s ease;
+}
+
+.matching-badge.high {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  color: #065f46;
+  border: 1.5px solid #059669;
+}
+
+.matching-badge.medium {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #92400e;
+  border: 1.5px solid #f59e0b;
+}
+
+.matching-badge.low {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  color: #991b1b;
+  border: 1.5px solid #dc2626;
+}
+
+.not-verified {
+  color: #9ca3af;
+  font-style: italic;
+  font-size: 0.9rem;
+}

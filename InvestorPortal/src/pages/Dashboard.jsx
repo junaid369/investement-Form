@@ -208,6 +208,7 @@ const Dashboard = () => {
                     <th>Court Agreement No</th>
                     <th>Name</th>
                     <th>Amount (AED)</th>
+                    <th>Data Match</th>
                     <th>Status</th>
                     <th>Submitted</th>
                     <th>Actions</th>
@@ -227,6 +228,15 @@ const Dashboard = () => {
                       <td>{item.personalInfo?.fullName || 'N/A'}</td>
                       <td className="amount-cell">
                         {formatAmount(item.investmentDetails?.amount)}
+                      </td>
+                      <td>
+                        {item.matchingPercentage !== undefined && item.matchingPercentage !== null ? (
+                          <span className={`matching-badge ${item.matchingPercentage >= 80 ? 'high' : item.matchingPercentage >= 50 ? 'medium' : 'low'}`}>
+                            {item.matchingPercentage}%
+                          </span>
+                        ) : (
+                          <span className="not-verified">-</span>
+                        )}
                       </td>
                       <td>
                         <span className={`status-badge ${item.status}`}>

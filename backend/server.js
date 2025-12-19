@@ -201,6 +201,32 @@ const investorFormSchema = new mongoose.Schema(
     certificateNumber: { type: String },
     certificatePdfUrl: { type: String }, // S3 URL for the certificate PDF
     verifiedBy: { type: String }, // Admin/Staff who verified
+
+    // Field-level verification for data matching
+    fieldVerifications: {
+      personalInfo: {
+        fullName: { type: String, enum: ['matched', 'mismatched', 'pending'], default: 'pending' },
+        email: { type: String, enum: ['matched', 'mismatched', 'pending'], default: 'pending' },
+        phone: { type: String, enum: ['matched', 'mismatched', 'pending'], default: 'pending' },
+        mobile: { type: String, enum: ['matched', 'mismatched', 'pending'], default: 'pending' },
+        country: { type: String, enum: ['matched', 'mismatched', 'pending'], default: 'pending' },
+        city: { type: String, enum: ['matched', 'mismatched', 'pending'], default: 'pending' },
+        address: { type: String, enum: ['matched', 'mismatched', 'pending'], default: 'pending' },
+      },
+      bankDetails: {
+        bankName: { type: String, enum: ['matched', 'mismatched', 'pending'], default: 'pending' },
+        accountNumber: { type: String, enum: ['matched', 'mismatched', 'pending'], default: 'pending' },
+        accountHolderName: { type: String, enum: ['matched', 'mismatched', 'pending'], default: 'pending' },
+        branchName: { type: String, enum: ['matched', 'mismatched', 'pending'], default: 'pending' },
+        iban: { type: String, enum: ['matched', 'mismatched', 'pending'], default: 'pending' },
+      },
+    },
+    // Overall matching statistics
+    matchingPercentage: { type: Number, default: 0, min: 0, max: 100 }, // Calculated percentage
+    verifiedFieldsCount: { type: Number, default: 0 }, // Number of matched fields
+    totalFieldsCount: { type: Number, default: 12 }, // Total verifiable fields (7 personal + 5 bank)
+    lastVerificationUpdate: { type: Date }, // When field verifications were last updated
+    verificationCompletedBy: { type: String }, // Admin who completed the verification
   },
   { timestamps: true }
 );
@@ -1154,6 +1180,72 @@ app.patch("/api/submissions/:id/status", async (req, res) => {
 
     res.json({ success: true, data: submission });
   } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Update field verifications for data matching
+app.patch("/api/submissions/:id/field-verifications", async (req, res) => {
+  try {
+    const { fieldVerifications, verifiedBy } = req.body;
+
+    if (!fieldVerifications) {
+      return res.status(400).json({ success: false, message: "Field verifications data is required" });
+    }
+
+    // Calculate matching percentage
+    const personalInfoFields = fieldVerifications.personalInfo || {};
+    const bankDetailsFields = fieldVerifications.bankDetails || {};
+
+    let matchedCount = 0;
+    let totalCount = 0;
+
+    // Count personal info matches
+    Object.values(personalInfoFields).forEach(status => {
+      totalCount++;
+      if (status === 'matched') matchedCount++;
+    });
+
+    // Count bank details matches
+    Object.values(bankDetailsFields).forEach(status => {
+      totalCount++;
+      if (status === 'matched') matchedCount++;
+    });
+
+    const matchingPercentage = totalCount > 0 ? Math.round((matchedCount / totalCount) * 100) : 0;
+
+    // Update submission
+    const updateData = {
+      fieldVerifications,
+      matchingPercentage,
+      verifiedFieldsCount: matchedCount,
+      totalFieldsCount: totalCount,
+      lastVerificationUpdate: new Date(),
+    };
+
+    if (verifiedBy) {
+      updateData.verificationCompletedBy = verifiedBy;
+    }
+
+    const submission = await InvestorForm.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true }
+    );
+
+    if (!submission) {
+      return res.status(404).json({ success: false, message: "Submission not found" });
+    }
+
+    res.json({
+      success: true,
+      data: submission,
+      matchingPercentage,
+      verifiedFieldsCount: matchedCount,
+      totalFieldsCount: totalCount
+    });
+  } catch (error) {
+    console.error("Field verification update error:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
