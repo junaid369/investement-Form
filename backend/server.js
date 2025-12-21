@@ -1059,17 +1059,19 @@ app.post(
 app.get("/api/submissions", async (req, res) => {
   try {
     const {
-      page = 1,
-      limit = 50,
+      page,
+      limit,
       search = "",
       status = "",
       sortBy = "createdAt",
       sortOrder = "desc",
     } = req.query;
 
-    const pageNum = parseInt(page);
-    const limitNum = parseInt(limit);
-    const skip = (pageNum - 1) * limitNum;
+    // If no limit provided, fetch all data (no pagination)
+    const usePagination = limit !== undefined && limit !== "" && parseInt(limit) > 0;
+    const pageNum = parseInt(page) || 1;
+    const limitNum = usePagination ? parseInt(limit) : 0;
+    const skip = usePagination ? (pageNum - 1) * limitNum : 0;
 
     // Build query
     let query = {};
@@ -1099,13 +1101,16 @@ app.get("/api/submissions", async (req, res) => {
 
     // Get total count
     const totalCount = await InvestorForm.countDocuments(query);
-    const totalPages = Math.ceil(totalCount / limitNum);
+    const totalPages = usePagination ? Math.ceil(totalCount / limitNum) : 1;
 
-    // Get paginated data
-    const submissions = await InvestorForm.find(query)
-      .sort(sortOptions)
-      .skip(skip)
-      .limit(limitNum);
+    // Get data - with or without pagination
+    let submissionsQuery = InvestorForm.find(query).sort(sortOptions);
+
+    if (usePagination) {
+      submissionsQuery = submissionsQuery.skip(skip).limit(limitNum);
+    }
+
+    const submissions = await submissionsQuery;
 
     res.json({
       success: true,
@@ -1114,9 +1119,9 @@ app.get("/api/submissions", async (req, res) => {
         currentPage: pageNum,
         totalPages,
         totalCount,
-        limit: limitNum,
-        hasNext: pageNum < totalPages,
-        hasPrev: pageNum > 1,
+        limit: usePagination ? limitNum : totalCount,
+        hasNext: usePagination ? pageNum < totalPages : false,
+        hasPrev: usePagination ? pageNum > 1 : false,
       },
     });
   } catch (error) {
