@@ -198,7 +198,7 @@ const generateVerificationCertificate = (submission) => {
     ["Investor Name", investorName, "Investment Amount", `AED ${investmentAmount}`],
     ["Bank Account Number", accountNumber, "Bank Name", bankName],
     ["Investment Date", investmentDate, "Total Dividends Paid", `AED ${totalDividends}`],
-    ["Certificate Number", certNumber, "Net Settlement Amount", `AED ${amountToReturn}`],
+    ["Certificate Number", certNumber, "Verification Date", verificationDate],
   ];
 
   doc.autoTable({
@@ -244,19 +244,6 @@ const generateVerificationCertificate = (submission) => {
         fontStyle: "bold",
         textColor: COLORS.black,
       },
-    },
-    didDrawCell: (data) => {
-      // Add thicker gold border to last row (settlement amount)
-      if (data.row.index === 3 && data.section === "body") {
-        doc.setDrawColor(...COLORS.gold);
-        doc.setLineWidth(1.2);
-        doc.line(
-          data.cell.x,
-          data.cell.y + data.cell.height,
-          data.cell.x + data.cell.width,
-          data.cell.y + data.cell.height
-        );
-      }
     },
   });
 
