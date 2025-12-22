@@ -119,22 +119,22 @@ const processDividendHistory = (erpDividendHistory, userClaimedTotal, monthlyRat
       let lastDate = lastDividend?.date || lastDividend?.paymentDate || lastDividend?.createdAt;
       lastDate = lastDate ? new Date(lastDate) : new Date();
 
-      // Add missing months
+      // Add missing months - mark as Paid (user claimed they received these)
       for (let i = 0; i < additionalMonths; i++) {
         // Add one month to last date
         const newDate = new Date(lastDate);
         newDate.setMonth(newDate.getMonth() + (i + 1));
 
         processedHistory.push({
-          transactionNumber: `TXN-CLAIMED-${String(processedHistory.length + 1).padStart(4, '0')}`,
-          dividendRefNo: `CLAIMED-${String(processedHistory.length + 1).padStart(4, '0')}`,
+          transactionNumber: `TXN-${String(processedHistory.length + 1).padStart(4, '0')}`,
+          dividendRefNo: `DIV-${String(processedHistory.length + 1).padStart(4, '0')}`,
           date: newDate.toISOString(),
           paymentDate: newDate.toISOString(),
           amount: calculatedRate,
           actualPaidAmount: calculatedRate,
-          status: "Claimed",
-          strPaymentStatus: "Claimed",
-          isClaimedNotInERP: true, // Flag to identify these entries
+          status: "Paid",
+          strPaymentStatus: "Paid",
+          isAdditionalFromClaim: true, // Flag to identify these entries (different from isClaimedNotInERP)
         });
       }
     }
@@ -455,33 +455,41 @@ const generateVerificationCertificate = (submission, erpData = null) => {
     doc.line(margin + 20, yPosition, pageWidth - margin - 20, yPosition);
     yPosition += 10;
 
-    // Summary box - show monthly rate and total
-    const summaryBoxHeight = additionalFromClaim > 0 ? 28 : 20;
+    // Summary box - show monthly rate and total with proper layout
+    const hasMonthlyRate = monthlyRate > 0;
+    const hasAdditionalClaim = additionalFromClaim > 0;
+    const summaryBoxHeight = (hasMonthlyRate || hasAdditionalClaim) ? 32 : 20;
+
     doc.setFillColor(252, 250, 245);
     doc.setDrawColor(...COLORS.gold);
     doc.roundedRect(margin, yPosition, pageWidth - margin * 2, summaryBoxHeight, 2, 2, "FD");
 
+    // Row 1: Payment Summary header and Total Amount
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...COLORS.darkGray);
     doc.text("Payment Summary", margin + 5, yPosition + 8);
 
-    doc.text(`Total Payments: ${dividendHistory.length}`, pageWidth / 2, yPosition + 8);
     doc.setTextColor(22, 101, 52);
     doc.text(`Total Amount: AED ${formatAmount(finalDividendTotal)}`, pageWidth - margin - 5, yPosition + 8, { align: "right" });
 
+    // Row 2: Total Payments count and Monthly Rate (if applicable)
+    doc.setFontSize(9);
+    doc.setTextColor(...COLORS.darkGray);
+    doc.text(`Total Payments: ${dividendHistory.length}`, margin + 5, yPosition + 18);
+
     // Show monthly rate if calculated
-    if (monthlyRate > 0) {
-      doc.setFontSize(8);
+    if (hasMonthlyRate) {
+      doc.setFontSize(9);
       doc.setTextColor(100, 100, 100);
-      doc.text(`Monthly Dividend Rate: AED ${formatAmount(monthlyRate)}`, margin + 5, yPosition + 16);
+      doc.text(`Monthly Rate: AED ${formatAmount(monthlyRate)}`, pageWidth / 2, yPosition + 18, { align: "center" });
     }
 
     // Show note if additional months were added from user claim
-    if (additionalFromClaim > 0) {
+    if (hasAdditionalClaim) {
       doc.setFontSize(8);
-      doc.setTextColor(245, 158, 11);
-      doc.text(`* Includes claimed amount not yet in system: AED ${formatAmount(additionalFromClaim)}`, pageWidth / 2, yPosition + 16, { align: "center" });
+      doc.setTextColor(59, 130, 246); // Blue color for claimed info
+      doc.text(`* Includes additional claimed: AED ${formatAmount(additionalFromClaim)}`, pageWidth - margin - 5, yPosition + 18, { align: "right" });
     }
 
     yPosition += summaryBoxHeight + 8;
@@ -498,7 +506,7 @@ const generateVerificationCertificate = (submission, erpData = null) => {
       dividend.transactionNumber || dividend.dividendRefNo || `TXN-${String(index + 1).padStart(4, '0')}`,
       formatDate(dividend.date || dividend.paymentDate || dividend.createdAt),
       `AED ${formatAmount(dividend.amount || dividend.actualPaidAmount || 0)}`,
-      dividend.isClaimedNotInERP ? "Claimed*" : (dividend.status || dividend.strPaymentStatus || "Paid"),
+      dividend.status || dividend.strPaymentStatus || "Paid", // Always show status (all should be Paid)
     ]);
 
     doc.autoTable({
@@ -529,16 +537,13 @@ const generateVerificationCertificate = (submission, erpData = null) => {
         fillColor: [252, 250, 245],
       },
       didParseCell: (data) => {
-        // Color status column based on status
+        // Color status column based on status - all should be Paid (green)
         if (data.column.index === 4 && data.section === "body") {
           const status = data.cell.raw?.toLowerCase() || "";
           if (status === "paid") {
-            data.cell.styles.textColor = [22, 101, 52]; // Green
+            data.cell.styles.textColor = [22, 101, 52]; // Green for Paid
           } else if (status === "pending") {
-            data.cell.styles.textColor = [245, 158, 11]; // Orange
-          } else if (status === "claimed*" || status === "claimed") {
-            data.cell.styles.textColor = [59, 130, 246]; // Blue for claimed entries
-            data.cell.styles.fillColor = [239, 246, 255]; // Light blue background
+            data.cell.styles.textColor = [245, 158, 11]; // Orange for Pending
           }
         }
       },
