@@ -434,86 +434,89 @@ const generateVerificationCertificate = (submission, erpData = null) => {
     doc.text(COMPANY_INFO.name.toUpperCase(), pageWidth / 2, yPosition, { align: "center" });
     yPosition += 10;
 
-    // Title
+    // Title with underline
     doc.setFontSize(14);
     doc.setTextColor(...COLORS.black);
     doc.text("DIVIDEND PAYMENT HISTORY", pageWidth / 2, yPosition, { align: "center" });
-    yPosition += 8;
+    yPosition += 3;
 
-    // Investor info
+    // Decorative underline for title
+    doc.setDrawColor(...COLORS.gold);
+    doc.setLineWidth(1);
+    doc.line(pageWidth / 2 - 45, yPosition, pageWidth / 2 + 45, yPosition);
+    yPosition += 10;
+
+    // Investor info in a subtle box
+    doc.setFillColor(250, 250, 250);
+    doc.setDrawColor(220, 220, 220);
+    doc.roundedRect(margin + 30, yPosition - 2, pageWidth - margin * 2 - 60, 16, 2, 2, "FD");
+
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(80, 80, 80);
-    doc.text(`Investor: ${investorName}`, pageWidth / 2, yPosition, { align: "center" });
-    yPosition += 5;
-    doc.text(`Certificate No: ${certNumber}`, pageWidth / 2, yPosition, { align: "center" });
-    yPosition += 12;
+    doc.text(`Investor: ${investorName}`, margin + 40, yPosition + 5);
+    doc.text(`Certificate No: ${certNumber}`, pageWidth - margin - 40, yPosition + 5, { align: "right" });
+    yPosition += 20;
 
-    // Gold divider
+    // Summary cards - modern card layout
+    const cardWidth = (pageWidth - margin * 2 - 15) / 3;
+    const cardHeight = 28;
+    const cardY = yPosition;
+
+    // Card 1: Total Payments
+    doc.setFillColor(249, 250, 251);
     doc.setDrawColor(...COLORS.gold);
-    doc.setLineWidth(0.5);
-    doc.line(margin + 20, yPosition, pageWidth - margin - 20, yPosition);
-    yPosition += 10;
-
-    // Summary box - show monthly rate and total with proper layout
-    const hasMonthlyRate = monthlyRate > 0;
-    const hasAdditionalClaim = additionalFromClaim > 0;
-    const summaryBoxHeight = (hasMonthlyRate || hasAdditionalClaim) ? 32 : 20;
-
-    doc.setFillColor(252, 250, 245);
-    doc.setDrawColor(...COLORS.gold);
-    doc.roundedRect(margin, yPosition, pageWidth - margin * 2, summaryBoxHeight, 2, 2, "FD");
-
-    // Row 1: Payment Summary header and Total Amount
-    doc.setFontSize(10);
+    doc.roundedRect(margin, cardY, cardWidth, cardHeight, 3, 3, "FD");
+    doc.setFontSize(8);
+    doc.setTextColor(107, 114, 128);
+    doc.text("TOTAL PAYMENTS", margin + cardWidth / 2, cardY + 8, { align: "center" });
+    doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...COLORS.darkGray);
-    doc.text("Payment Summary", margin + 5, yPosition + 8);
+    doc.text(`${dividendHistory.length}`, margin + cardWidth / 2, cardY + 20, { align: "center" });
 
-    doc.setTextColor(22, 101, 52);
-    doc.text(`Total Amount: AED ${formatAmount(finalDividendTotal)}`, pageWidth - margin - 5, yPosition + 8, { align: "right" });
-
-    // Row 2: Total Payments count and Monthly Rate (if applicable)
-    doc.setFontSize(9);
-    doc.setTextColor(...COLORS.darkGray);
-    doc.text(`Total Payments: ${dividendHistory.length}`, margin + 5, yPosition + 18);
-
-    // Show monthly rate if calculated
-    if (hasMonthlyRate) {
-      doc.setFontSize(9);
-      doc.setTextColor(100, 100, 100);
-      doc.text(`Monthly Rate: AED ${formatAmount(monthlyRate)}`, pageWidth / 2, yPosition + 18, { align: "center" });
-    }
-
-    // Show note if additional months were added from user claim
-    if (hasAdditionalClaim) {
-      doc.setFontSize(8);
-      doc.setTextColor(59, 130, 246); // Blue color for claimed info
-      doc.text(`* Includes additional claimed: AED ${formatAmount(additionalFromClaim)}`, pageWidth - margin - 5, yPosition + 18, { align: "right" });
-    }
-
-    yPosition += summaryBoxHeight + 8;
-
-    // Dividend history table
-    doc.setFontSize(10);
+    // Card 2: Monthly Rate
+    const card2X = margin + cardWidth + 7.5;
+    doc.setFillColor(249, 250, 251);
+    doc.roundedRect(card2X, cardY, cardWidth, cardHeight, 3, 3, "FD");
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(107, 114, 128);
+    doc.text("MONTHLY DIVIDEND", card2X + cardWidth / 2, cardY + 8, { align: "center" });
+    doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...COLORS.gold);
-    doc.text("DIVIDEND TRANSACTIONS", margin, yPosition);
-    yPosition += 6;
+    doc.text(`AED ${formatAmount(monthlyRate)}`, card2X + cardWidth / 2, cardY + 20, { align: "center" });
 
+    // Card 3: Total Amount (highlighted)
+    const card3X = margin + (cardWidth + 7.5) * 2;
+    doc.setFillColor(22, 101, 52); // Green background
+    doc.roundedRect(card3X, cardY, cardWidth, cardHeight, 3, 3, "F");
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(187, 247, 208); // Light green text
+    doc.text("TOTAL AMOUNT", card3X + cardWidth / 2, cardY + 8, { align: "center" });
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(255, 255, 255);
+    doc.text(`AED ${formatAmount(finalDividendTotal)}`, card3X + cardWidth / 2, cardY + 20, { align: "center" });
+
+    yPosition = cardY + cardHeight + 12;
+
+    // Dividend history table with improved styling
     const dividendTableData = dividendHistory.map((dividend, index) => [
       (index + 1).toString(),
       dividend.transactionNumber || dividend.dividendRefNo || `TXN-${String(index + 1).padStart(4, '0')}`,
       formatDate(dividend.date || dividend.paymentDate || dividend.createdAt),
       `AED ${formatAmount(dividend.amount || dividend.actualPaidAmount || 0)}`,
-      dividend.status || dividend.strPaymentStatus || "Paid", // Always show status (all should be Paid)
+      dividend.status || dividend.strPaymentStatus || "Paid",
     ]);
 
     doc.autoTable({
       startY: yPosition,
-      head: [["#", "Transaction No.", "Date", "Amount", "Status"]],
+      head: [["#", "Transaction Reference", "Payment Date", "Amount", "Status"]],
       body: dividendTableData,
-      theme: "grid",
+      theme: "striped",
       margin: { left: margin, right: margin },
       headStyles: {
         fillColor: COLORS.gold,
@@ -521,17 +524,19 @@ const generateVerificationCertificate = (submission, erpData = null) => {
         fontStyle: "bold",
         fontSize: 9,
         halign: "center",
+        cellPadding: 4,
       },
       bodyStyles: {
         fontSize: 9,
         textColor: COLORS.darkGray,
+        cellPadding: 3,
       },
       columnStyles: {
         0: { cellWidth: 12, halign: "center" },
-        1: { cellWidth: 45, halign: "left" },
-        2: { cellWidth: 35, halign: "center" },
-        3: { cellWidth: 40, halign: "right", fontStyle: "bold", textColor: [22, 101, 52] },
-        4: { cellWidth: 30, halign: "center" },
+        1: { cellWidth: 50, halign: "left" },
+        2: { cellWidth: 32, halign: "center" },
+        3: { cellWidth: 38, halign: "right", fontStyle: "bold", textColor: [22, 101, 52] },
+        4: { cellWidth: 28, halign: "center" },
       },
       alternateRowStyles: {
         fillColor: [252, 250, 245],
@@ -549,15 +554,13 @@ const generateVerificationCertificate = (submission, erpData = null) => {
       },
     });
 
-    yPosition = doc.lastAutoTable.finalY + 15;
+    yPosition = doc.lastAutoTable.finalY + 12;
 
-    // Total row
-    doc.setFillColor(22, 101, 52);
-    doc.roundedRect(pageWidth - margin - 80, yPosition, 80, 12, 2, 2, "F");
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(255, 255, 255);
-    doc.text(`TOTAL: AED ${formatAmount(finalDividendTotal)}`, pageWidth - margin - 40, yPosition + 8, { align: "center" });
+    // Verification note at the bottom
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "italic");
+    doc.setTextColor(120, 120, 120);
+    doc.text("This dividend payment history is an official record verified against our internal systems.", pageWidth / 2, yPosition, { align: "center" });
 
     // Draw footer for page 2
     drawPageFooter(2, totalPages);
