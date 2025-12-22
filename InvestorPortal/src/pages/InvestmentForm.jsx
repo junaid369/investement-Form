@@ -196,6 +196,13 @@ const InvestmentForm = () => {
       const response = await submissionAPI.getById(id);
       if (response.data.success) {
         const data = response.data.submission;
+
+        // Prevent editing rejected or verified submissions - redirect to view page
+        if (data.status === 'rejected' || data.status === 'verified') {
+          navigate(`/view/${id}`, { replace: true });
+          return;
+        }
+
         setFormData({
           courtAgreementNumber: data.courtAgreementNumber || '',
           personalInfo: {

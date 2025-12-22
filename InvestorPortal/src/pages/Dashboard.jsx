@@ -281,7 +281,7 @@ const Dashboard = () => {
                               <FiEdit2 />
                             </button>
                           )}
-                          {item.status !== 'verified' && (
+                          {item.status !== 'verified' && item.status !== 'rejected' && (
                             <button
                               className="action-btn delete"
                               onClick={(e) => handleDelete(item._id, e)}
