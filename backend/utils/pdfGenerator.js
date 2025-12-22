@@ -46,6 +46,115 @@ const formatAmount = (amount) => {
 };
 
 /**
+ * Round amount to nearest expected monthly dividend rate
+ * Common rates: 10000, 15000, 20000, 25000, 30000, etc.
+ */
+const roundToMonthlyRate = (amount, monthlyRate) => {
+  if (!amount || !monthlyRate) return amount;
+  // Round to nearest multiple of monthly rate
+  return Math.round(amount / monthlyRate) * monthlyRate;
+};
+
+/**
+ * Calculate monthly dividend rate from ERP dividend history
+ * @param {Array} dividendHistory - Array of dividend records
+ * @returns {number} - Calculated monthly rate
+ */
+const calculateMonthlyRate = (dividendHistory) => {
+  if (!dividendHistory || dividendHistory.length === 0) return 0;
+
+  // Get all amounts
+  const amounts = dividendHistory.map(d => d.amount || d.actualPaidAmount || 0).filter(a => a > 0);
+  if (amounts.length === 0) return 0;
+
+  // Calculate total and average
+  const total = amounts.reduce((sum, a) => sum + a, 0);
+  const avgAmount = total / amounts.length;
+
+  // Round to common dividend rates (nearest 5000)
+  const roundedRate = Math.round(avgAmount / 5000) * 5000;
+
+  return roundedRate > 0 ? roundedRate : avgAmount;
+};
+
+/**
+ * Process dividend history - round amounts and add missing months if user claimed more
+ * @param {Array} erpDividendHistory - Dividend history from ERP
+ * @param {number} userClaimedTotal - Total dividends claimed by user
+ * @param {number} monthlyRate - Monthly dividend rate (can be passed or calculated)
+ * @returns {Object} - Processed dividend history and total
+ */
+const processDividendHistory = (erpDividendHistory, userClaimedTotal, monthlyRate = null) => {
+  if (!erpDividendHistory || erpDividendHistory.length === 0) {
+    return { processedHistory: [], totalAmount: userClaimedTotal || 0, monthlyRate: 0 };
+  }
+
+  // Calculate monthly rate if not provided
+  const calculatedRate = monthlyRate || calculateMonthlyRate(erpDividendHistory);
+
+  // Round each ERP dividend amount to the monthly rate
+  const processedHistory = erpDividendHistory.map((dividend) => {
+    const originalAmount = dividend.amount || dividend.actualPaidAmount || 0;
+    const roundedAmount = calculatedRate > 0 ? roundToMonthlyRate(originalAmount, calculatedRate) : originalAmount;
+
+    return {
+      ...dividend,
+      originalAmount,
+      amount: roundedAmount,
+      actualPaidAmount: roundedAmount,
+    };
+  });
+
+  // Calculate total from rounded ERP amounts
+  const erpRoundedTotal = processedHistory.reduce((sum, d) => sum + (d.amount || 0), 0);
+
+  // Check if user claimed more than ERP records
+  if (userClaimedTotal && userClaimedTotal > erpRoundedTotal && calculatedRate > 0) {
+    const difference = userClaimedTotal - erpRoundedTotal;
+    const additionalMonths = Math.round(difference / calculatedRate);
+
+    if (additionalMonths > 0) {
+      // Get the last dividend date to calculate next month dates
+      const lastDividend = processedHistory[processedHistory.length - 1];
+      let lastDate = lastDividend?.date || lastDividend?.paymentDate || lastDividend?.createdAt;
+      lastDate = lastDate ? new Date(lastDate) : new Date();
+
+      // Add missing months
+      for (let i = 0; i < additionalMonths; i++) {
+        // Add one month to last date
+        const newDate = new Date(lastDate);
+        newDate.setMonth(newDate.getMonth() + (i + 1));
+
+        processedHistory.push({
+          transactionNumber: `TXN-CLAIMED-${String(processedHistory.length + 1).padStart(4, '0')}`,
+          dividendRefNo: `CLAIMED-${String(processedHistory.length + 1).padStart(4, '0')}`,
+          date: newDate.toISOString(),
+          paymentDate: newDate.toISOString(),
+          amount: calculatedRate,
+          actualPaidAmount: calculatedRate,
+          status: "Claimed",
+          strPaymentStatus: "Claimed",
+          isClaimedNotInERP: true, // Flag to identify these entries
+        });
+      }
+    }
+  }
+
+  // Calculate final total (use user claimed if higher, otherwise use rounded ERP total)
+  const finalTotal = userClaimedTotal && userClaimedTotal > erpRoundedTotal
+    ? userClaimedTotal
+    : erpRoundedTotal;
+
+  return {
+    processedHistory,
+    totalAmount: finalTotal,
+    monthlyRate: calculatedRate,
+    erpTotal: erpRoundedTotal,
+    additionalFromClaim: userClaimedTotal > erpRoundedTotal ? userClaimedTotal - erpRoundedTotal : 0,
+  };
+};
+
+/**
  * Generate Investment Verification Certificate PDF - Professional Multi-Page Design
  * @param {Object} submission - The legal submission data
  * @param {Object} erpData - Optional ERP data with dividend history
@@ -290,7 +399,17 @@ const generateVerificationCertificate = (submission, erpData = null) => {
   doc.text(splitAuth, pageWidth / 2, yPosition, { align: "center" });
 
   // Get dividend history from erpData or submission
-  const dividendHistory = erpData?.dividendHistory || submission.erpDividendHistory || [];
+  const rawDividendHistory = erpData?.dividendHistory || submission.erpDividendHistory || [];
+  const userClaimedDividends = parseFloat(submission.dividendHistory?.totalReceived || 0);
+
+  // Process dividend history - round amounts and add missing months if user claimed more
+  const {
+    processedHistory: dividendHistory,
+    totalAmount: finalDividendTotal,
+    monthlyRate,
+    additionalFromClaim,
+  } = processDividendHistory(rawDividendHistory, userClaimedDividends);
+
   const hasDividendHistory = dividendHistory.length > 0;
   const totalPages = hasDividendHistory ? 2 : 1;
 
@@ -336,22 +455,36 @@ const generateVerificationCertificate = (submission, erpData = null) => {
     doc.line(margin + 20, yPosition, pageWidth - margin - 20, yPosition);
     yPosition += 10;
 
-    // Summary box
+    // Summary box - show monthly rate and total
+    const summaryBoxHeight = additionalFromClaim > 0 ? 28 : 20;
     doc.setFillColor(252, 250, 245);
     doc.setDrawColor(...COLORS.gold);
-    doc.roundedRect(margin, yPosition, pageWidth - margin * 2, 20, 2, 2, "FD");
+    doc.roundedRect(margin, yPosition, pageWidth - margin * 2, summaryBoxHeight, 2, 2, "FD");
 
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...COLORS.darkGray);
     doc.text("Payment Summary", margin + 5, yPosition + 8);
 
-    const totalPaid = dividendHistory.reduce((sum, d) => sum + (d.amount || d.actualPaidAmount || 0), 0);
     doc.text(`Total Payments: ${dividendHistory.length}`, pageWidth / 2, yPosition + 8);
     doc.setTextColor(22, 101, 52);
-    doc.text(`Total Amount Paid: AED ${formatAmount(totalPaid)}`, pageWidth - margin - 5, yPosition + 8, { align: "right" });
+    doc.text(`Total Amount: AED ${formatAmount(finalDividendTotal)}`, pageWidth - margin - 5, yPosition + 8, { align: "right" });
 
-    yPosition += 28;
+    // Show monthly rate if calculated
+    if (monthlyRate > 0) {
+      doc.setFontSize(8);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Monthly Dividend Rate: AED ${formatAmount(monthlyRate)}`, margin + 5, yPosition + 16);
+    }
+
+    // Show note if additional months were added from user claim
+    if (additionalFromClaim > 0) {
+      doc.setFontSize(8);
+      doc.setTextColor(245, 158, 11);
+      doc.text(`* Includes claimed amount not yet in system: AED ${formatAmount(additionalFromClaim)}`, pageWidth / 2, yPosition + 16, { align: "center" });
+    }
+
+    yPosition += summaryBoxHeight + 8;
 
     // Dividend history table
     doc.setFontSize(10);
@@ -365,7 +498,7 @@ const generateVerificationCertificate = (submission, erpData = null) => {
       dividend.transactionNumber || dividend.dividendRefNo || `TXN-${String(index + 1).padStart(4, '0')}`,
       formatDate(dividend.date || dividend.paymentDate || dividend.createdAt),
       `AED ${formatAmount(dividend.amount || dividend.actualPaidAmount || 0)}`,
-      dividend.status || dividend.strPaymentStatus || "Paid",
+      dividend.isClaimedNotInERP ? "Claimed*" : (dividend.status || dividend.strPaymentStatus || "Paid"),
     ]);
 
     doc.autoTable({
@@ -403,6 +536,9 @@ const generateVerificationCertificate = (submission, erpData = null) => {
             data.cell.styles.textColor = [22, 101, 52]; // Green
           } else if (status === "pending") {
             data.cell.styles.textColor = [245, 158, 11]; // Orange
+          } else if (status === "claimed*" || status === "claimed") {
+            data.cell.styles.textColor = [59, 130, 246]; // Blue for claimed entries
+            data.cell.styles.fillColor = [239, 246, 255]; // Light blue background
           }
         }
       },
@@ -416,7 +552,7 @@ const generateVerificationCertificate = (submission, erpData = null) => {
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(255, 255, 255);
-    doc.text(`TOTAL: AED ${formatAmount(totalPaid)}`, pageWidth - margin - 40, yPosition + 8, { align: "center" });
+    doc.text(`TOTAL: AED ${formatAmount(finalDividendTotal)}`, pageWidth - margin - 40, yPosition + 8, { align: "center" });
 
     // Draw footer for page 2
     drawPageFooter(2, totalPages);
