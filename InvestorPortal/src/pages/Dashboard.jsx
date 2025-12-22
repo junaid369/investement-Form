@@ -270,7 +270,7 @@ const Dashboard = () => {
                               <FiEye />
                             </button>
                           )}
-                          {(item.status === 'draft' || item.status === 'pending') && (
+                          {(item.status === 'draft' || item.status === 'pending' || item.status === 'rejected') && (
                             <button
                               className="action-btn edit"
                               onClick={(e) => {

@@ -410,7 +410,7 @@ const ViewSubmission = () => {
             >
               <FiDownload /> Download PDF
             </button>
-            {status === 'pending' && (
+            {(status === 'pending' || status === 'rejected') && (
               <button
                 onClick={() => navigate(`/form/${id}`)}
                 className="btn btn-primary"

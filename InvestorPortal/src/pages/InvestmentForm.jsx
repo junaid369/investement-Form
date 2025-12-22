@@ -197,8 +197,9 @@ const InvestmentForm = () => {
       if (response.data.success) {
         const data = response.data.submission;
 
-        // Prevent editing rejected or verified submissions - redirect to view page
-        if (data.status === 'rejected' || data.status === 'verified') {
+        // Prevent editing verified submissions - redirect to view page
+        // Rejected submissions CAN be edited so users can fix issues and resubmit
+        if (data.status === 'verified') {
           navigate(`/view/${id}`, { replace: true });
           return;
         }
