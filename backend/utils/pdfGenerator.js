@@ -46,22 +46,53 @@ const formatAmount = (amount) => {
 };
 
 /**
- * Generate Investment Verification Certificate PDF - Professional Single Page Design
+ * Generate Investment Verification Certificate PDF - Professional Multi-Page Design
  * @param {Object} submission - The legal submission data
+ * @param {Object} erpData - Optional ERP data with dividend history
  * @returns {Buffer} - The generated PDF as buffer
  */
-const generateVerificationCertificate = (submission) => {
+const generateVerificationCertificate = (submission, erpData = null) => {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 20;
 
-  // ===== ELEGANT DOUBLE BORDER WITH GOLD ACCENTS =====
-  doc.setDrawColor(...COLORS.gold);
-  doc.setLineWidth(1.5);
-  doc.rect(10, 10, pageWidth - 20, pageHeight - 20);
-  doc.setLineWidth(0.5);
-  doc.rect(12, 12, pageWidth - 24, pageHeight - 24);
+  // Helper function to draw page border
+  const drawPageBorder = () => {
+    doc.setDrawColor(...COLORS.gold);
+    doc.setLineWidth(1.5);
+    doc.rect(10, 10, pageWidth - 20, pageHeight - 20);
+    doc.setLineWidth(0.5);
+    doc.rect(12, 12, pageWidth - 24, pageHeight - 24);
+  };
+
+  // Helper function to draw page footer
+  const drawPageFooter = (pageNum, totalPages) => {
+    doc.setFillColor(...COLORS.gold);
+    doc.rect(12, pageHeight - 20, pageWidth - 24, 8, "F");
+
+    const footerDividerY = pageHeight - 30;
+    const footerTextY = pageHeight - 25;
+
+    doc.setDrawColor(...COLORS.gold);
+    doc.setLineWidth(0.5);
+    doc.line(margin + 20, footerDividerY, pageWidth - margin - 20, footerDividerY);
+
+    doc.setFontSize(6.5);
+    doc.setTextColor(80, 80, 80);
+    doc.setFont("helvetica", "normal");
+    doc.text(COMPANY_INFO.address, pageWidth / 2, footerTextY, { align: "center" });
+
+    const contactInfo = `${COMPANY_INFO.phone}  •  ${COMPANY_INFO.email}  •  ${COMPANY_INFO.website}`;
+    doc.text(contactInfo, pageWidth / 2, footerTextY + 3.5, { align: "center" });
+
+    // Page number
+    doc.setFontSize(8);
+    doc.text(`Page ${pageNum} of ${totalPages}`, pageWidth - margin - 5, pageHeight - 35, { align: "right" });
+  };
+
+  // ===== PAGE 1: MAIN CERTIFICATE =====
+  drawPageBorder();
 
   // ===== TOP GOLD BAR =====
   doc.setFillColor(...COLORS.gold);
@@ -139,7 +170,7 @@ const generateVerificationCertificate = (submission) => {
   const bankName = submission.bankDetails?.bankName || "N/A";
   const investmentDate = formatDate(submission.investmentDetails?.investmentDate);
   const totalDividends = formatAmount(submission.dividendHistory?.totalReceived || 0);
-  const amountToReturn = formatAmount((submission.investmentDetails?.amount || 0) - (submission.dividendHistory?.totalReceived || 0));
+  const amountReceived = formatAmount(submission.dividendHistory?.totalReceived || 0);
 
   // Formal heading
   doc.setFontSize(10);
@@ -155,7 +186,7 @@ const generateVerificationCertificate = (submission) => {
 
   const para1 = `This is to certify that ${COMPANY_INFO.name} has conducted a comprehensive review and verification of the investment closure request submitted by ${investorName}. Our thorough examination of records confirms the following:`;
   const para2 = `The investor made an initial investment of AED ${investmentAmount} on ${investmentDate}. The designated bank account ${accountNumber} maintained with ${bankName} has been verified and confirmed. Total dividends of AED ${totalDividends} have been distributed to the investor during the investment period.`;
-  const para3 = `Following successful verification of all documentation and records against our internal systems, we hereby confirm that the net settlement amount of AED ${amountToReturn} has been approved for processing and will be transferred to the investor's verified bank account in accordance with our company policies and procedures.`;
+  const para3 = `Following successful verification of all documentation and records against our internal systems, we hereby confirm that this investment closure request has been approved for processing in accordance with our company policies and procedures.`;
 
   const boxWidth = pageWidth - (margin * 2) - 12;
   const boxStartX = margin + 6;
@@ -197,7 +228,7 @@ const generateVerificationCertificate = (submission) => {
   const tableData = [
     ["Investor Name", investorName, "Investment Amount", `AED ${investmentAmount}`],
     ["Bank Account Number", accountNumber, "Bank Name", bankName],
-    ["Investment Date", investmentDate, "Total Dividends Paid", `AED ${totalDividends}`],
+    ["Investment Date", investmentDate, "Amount Received", `AED ${amountReceived}`],
     ["Certificate Number", certNumber, "Verification Date", verificationDate],
   ];
 
@@ -257,33 +288,139 @@ const generateVerificationCertificate = (submission) => {
   const authText = "This certificate has been electronically generated and verified. It serves as official confirmation of the investment closure verification process.";
   const splitAuth = doc.splitTextToSize(authText, pageWidth - (margin * 2) - 30);
   doc.text(splitAuth, pageWidth / 2, yPosition, { align: "center" });
-  yPosition += (splitAuth.length * 3.5) + 8;
 
-  // ===== FOOTER - CLEAN & PROFESSIONAL =====
-  // Bottom gold bar FIRST (at the very bottom)
-  doc.setFillColor(...COLORS.gold);
-  doc.rect(12, pageHeight - 20, pageWidth - 24, 8, "F");
+  // Get dividend history from erpData or submission
+  const dividendHistory = erpData?.dividendHistory || submission.erpDividendHistory || [];
+  const hasDividendHistory = dividendHistory.length > 0;
+  const totalPages = hasDividendHistory ? 2 : 1;
 
-  // Calculate footer position - fixed from bottom
-  const footerDividerY = pageHeight - 30;
-  const footerTextY = pageHeight - 25;
+  // Draw footer for page 1
+  drawPageFooter(1, totalPages);
 
-  // Gold divider line
-  doc.setDrawColor(...COLORS.gold);
-  doc.setLineWidth(0.5);
-  doc.line(margin + 20, footerDividerY, pageWidth - margin - 20, footerDividerY);
+  // ===== PAGE 2: DIVIDEND HISTORY (if available) =====
+  if (hasDividendHistory) {
+    doc.addPage();
+    drawPageBorder();
 
-  // Footer text on TWO lines for better readability
-  doc.setFontSize(6.5);
-  doc.setTextColor(80, 80, 80);
-  doc.setFont("helvetica", "normal");
+    // Top gold bar
+    doc.setFillColor(...COLORS.gold);
+    doc.rect(12, 12, pageWidth - 24, 8, "F");
 
-  // Line 1: Address
-  doc.text(COMPANY_INFO.address, pageWidth / 2, footerTextY, { align: "center" });
+    yPosition = 30;
 
-  // Line 2: Contact details
-  const contactInfo = `${COMPANY_INFO.phone}  •  ${COMPANY_INFO.email}  •  ${COMPANY_INFO.website}`;
-  doc.text(contactInfo, pageWidth / 2, footerTextY + 3.5, { align: "center" });
+    // Header
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.setTextColor(...COLORS.gold);
+    doc.text(COMPANY_INFO.name.toUpperCase(), pageWidth / 2, yPosition, { align: "center" });
+    yPosition += 10;
+
+    // Title
+    doc.setFontSize(14);
+    doc.setTextColor(...COLORS.black);
+    doc.text("DIVIDEND PAYMENT HISTORY", pageWidth / 2, yPosition, { align: "center" });
+    yPosition += 8;
+
+    // Investor info
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(80, 80, 80);
+    doc.text(`Investor: ${investorName}`, pageWidth / 2, yPosition, { align: "center" });
+    yPosition += 5;
+    doc.text(`Certificate No: ${certNumber}`, pageWidth / 2, yPosition, { align: "center" });
+    yPosition += 12;
+
+    // Gold divider
+    doc.setDrawColor(...COLORS.gold);
+    doc.setLineWidth(0.5);
+    doc.line(margin + 20, yPosition, pageWidth - margin - 20, yPosition);
+    yPosition += 10;
+
+    // Summary box
+    doc.setFillColor(252, 250, 245);
+    doc.setDrawColor(...COLORS.gold);
+    doc.roundedRect(margin, yPosition, pageWidth - margin * 2, 20, 2, 2, "FD");
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...COLORS.darkGray);
+    doc.text("Payment Summary", margin + 5, yPosition + 8);
+
+    const totalPaid = dividendHistory.reduce((sum, d) => sum + (d.amount || d.actualPaidAmount || 0), 0);
+    doc.text(`Total Payments: ${dividendHistory.length}`, pageWidth / 2, yPosition + 8);
+    doc.setTextColor(22, 101, 52);
+    doc.text(`Total Amount Paid: AED ${formatAmount(totalPaid)}`, pageWidth - margin - 5, yPosition + 8, { align: "right" });
+
+    yPosition += 28;
+
+    // Dividend history table
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...COLORS.gold);
+    doc.text("DIVIDEND TRANSACTIONS", margin, yPosition);
+    yPosition += 6;
+
+    const dividendTableData = dividendHistory.map((dividend, index) => [
+      (index + 1).toString(),
+      dividend.transactionNumber || dividend.dividendRefNo || `TXN-${String(index + 1).padStart(4, '0')}`,
+      formatDate(dividend.date || dividend.paymentDate || dividend.createdAt),
+      `AED ${formatAmount(dividend.amount || dividend.actualPaidAmount || 0)}`,
+      dividend.status || dividend.strPaymentStatus || "Paid",
+    ]);
+
+    doc.autoTable({
+      startY: yPosition,
+      head: [["#", "Transaction No.", "Date", "Amount", "Status"]],
+      body: dividendTableData,
+      theme: "grid",
+      margin: { left: margin, right: margin },
+      headStyles: {
+        fillColor: COLORS.gold,
+        textColor: [255, 255, 255],
+        fontStyle: "bold",
+        fontSize: 9,
+        halign: "center",
+      },
+      bodyStyles: {
+        fontSize: 9,
+        textColor: COLORS.darkGray,
+      },
+      columnStyles: {
+        0: { cellWidth: 12, halign: "center" },
+        1: { cellWidth: 45, halign: "left" },
+        2: { cellWidth: 35, halign: "center" },
+        3: { cellWidth: 40, halign: "right", fontStyle: "bold", textColor: [22, 101, 52] },
+        4: { cellWidth: 30, halign: "center" },
+      },
+      alternateRowStyles: {
+        fillColor: [252, 250, 245],
+      },
+      didParseCell: (data) => {
+        // Color status column based on status
+        if (data.column.index === 4 && data.section === "body") {
+          const status = data.cell.raw?.toLowerCase() || "";
+          if (status === "paid") {
+            data.cell.styles.textColor = [22, 101, 52]; // Green
+          } else if (status === "pending") {
+            data.cell.styles.textColor = [245, 158, 11]; // Orange
+          }
+        }
+      },
+    });
+
+    yPosition = doc.lastAutoTable.finalY + 15;
+
+    // Total row
+    doc.setFillColor(22, 101, 52);
+    doc.roundedRect(pageWidth - margin - 80, yPosition, 80, 12, 2, 2, "F");
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(255, 255, 255);
+    doc.text(`TOTAL: AED ${formatAmount(totalPaid)}`, pageWidth - margin - 40, yPosition + 8, { align: "center" });
+
+    // Draw footer for page 2
+    drawPageFooter(2, totalPages);
+  }
 
   // Return PDF as buffer
   return Buffer.from(doc.output("arraybuffer"));
@@ -362,11 +499,11 @@ const generateDiscrepancyReport = (submission, erpData, discrepancyDetails) => {
   doc.text("Discrepancy Details", margin, yPosition);
   yPosition += 8;
 
-  // Build table data
-  const tableData = [];
+  // Build investment discrepancy table data
+  const investmentTableData = [];
 
   if (discrepancyDetails.investmentAmount) {
-    tableData.push([
+    investmentTableData.push([
       "Investment Amount",
       `AED ${formatAmount(discrepancyDetails.investmentAmount.claimed)}`,
       `AED ${formatAmount(discrepancyDetails.investmentAmount.actual)}`,
@@ -375,7 +512,7 @@ const generateDiscrepancyReport = (submission, erpData, discrepancyDetails) => {
   }
 
   if (discrepancyDetails.investmentDate) {
-    tableData.push([
+    investmentTableData.push([
       "Investment Date",
       formatDate(discrepancyDetails.investmentDate.claimed),
       formatDate(discrepancyDetails.investmentDate.actual),
@@ -384,7 +521,7 @@ const generateDiscrepancyReport = (submission, erpData, discrepancyDetails) => {
   }
 
   if (discrepancyDetails.dividendAmount) {
-    tableData.push([
+    investmentTableData.push([
       "Total Dividends",
       `AED ${formatAmount(discrepancyDetails.dividendAmount.claimed)}`,
       `AED ${formatAmount(discrepancyDetails.dividendAmount.actual)}`,
@@ -393,7 +530,7 @@ const generateDiscrepancyReport = (submission, erpData, discrepancyDetails) => {
   }
 
   if (discrepancyDetails.duration) {
-    tableData.push([
+    investmentTableData.push([
       "Duration",
       `${discrepancyDetails.duration.claimed} months`,
       `${discrepancyDetails.duration.actual} months`,
@@ -402,7 +539,7 @@ const generateDiscrepancyReport = (submission, erpData, discrepancyDetails) => {
   }
 
   if (discrepancyDetails.referenceNumber) {
-    tableData.push([
+    investmentTableData.push([
       "Reference Number",
       discrepancyDetails.referenceNumber.claimed || "Not provided",
       discrepancyDetails.referenceNumber.actual || "N/A",
@@ -410,11 +547,11 @@ const generateDiscrepancyReport = (submission, erpData, discrepancyDetails) => {
     ]);
   }
 
-  if (tableData.length > 0) {
+  if (investmentTableData.length > 0) {
     doc.autoTable({
       startY: yPosition,
       head: [["Field", "Investor Claim", "Our Records", "Difference"]],
-      body: tableData,
+      body: investmentTableData,
       theme: "grid",
       margin: { left: margin, right: margin },
       headStyles: {
@@ -432,6 +569,107 @@ const generateDiscrepancyReport = (submission, erpData, discrepancyDetails) => {
         1: { fillColor: [224, 242, 254], textColor: [3, 105, 161] },
         2: { fillColor: [220, 252, 231], textColor: [22, 101, 52] },
         3: { fillColor: [254, 226, 226], textColor: [153, 27, 27] },
+      },
+    });
+
+    yPosition = doc.lastAutoTable.finalY + 15;
+  }
+
+  // ===== Bank Details Discrepancy Section =====
+  const bankTableData = [];
+
+  if (discrepancyDetails.bankName) {
+    bankTableData.push([
+      "Bank Name",
+      discrepancyDetails.bankName.claimed || "Not provided",
+      discrepancyDetails.bankName.actual || "N/A",
+      discrepancyDetails.bankName.matched ? "Match" : "Mismatch"
+    ]);
+  }
+
+  if (discrepancyDetails.accountNumber) {
+    bankTableData.push([
+      "Account Number",
+      discrepancyDetails.accountNumber.claimed || "Not provided",
+      discrepancyDetails.accountNumber.actual || "N/A",
+      discrepancyDetails.accountNumber.matched ? "Match" : "Mismatch"
+    ]);
+  }
+
+  if (discrepancyDetails.accountHolderName) {
+    bankTableData.push([
+      "Account Holder Name",
+      discrepancyDetails.accountHolderName.claimed || "Not provided",
+      discrepancyDetails.accountHolderName.actual || "N/A",
+      discrepancyDetails.accountHolderName.matched ? "Match" : "Mismatch"
+    ]);
+  }
+
+  if (discrepancyDetails.iban) {
+    bankTableData.push([
+      "IBAN",
+      discrepancyDetails.iban.claimed || "Not provided",
+      discrepancyDetails.iban.actual || "N/A",
+      discrepancyDetails.iban.matched ? "Match" : "Mismatch"
+    ]);
+  }
+
+  if (discrepancyDetails.branchName) {
+    bankTableData.push([
+      "Branch Name",
+      discrepancyDetails.branchName.claimed || "Not provided",
+      discrepancyDetails.branchName.actual || "N/A",
+      discrepancyDetails.branchName.matched ? "Match" : "Mismatch"
+    ]);
+  }
+
+  if (bankTableData.length > 0) {
+    // Check if we need a new page
+    if (yPosition > doc.internal.pageSize.getHeight() - 80) {
+      doc.addPage();
+      yPosition = 20;
+    }
+
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(120, 53, 15);
+    doc.text("Bank Details Discrepancy", margin, yPosition);
+    yPosition += 8;
+
+    doc.autoTable({
+      startY: yPosition,
+      head: [["Field", "Investor Claim", "Our Records", "Status"]],
+      body: bankTableData,
+      theme: "grid",
+      margin: { left: margin, right: margin },
+      headStyles: {
+        fillColor: [59, 130, 246],
+        textColor: [255, 255, 255],
+        fontStyle: "bold",
+        fontSize: 9,
+      },
+      bodyStyles: {
+        fontSize: 9,
+        textColor: [50, 50, 50],
+      },
+      columnStyles: {
+        0: { fontStyle: "bold", fillColor: [239, 246, 255] },
+        1: { fillColor: [224, 242, 254], textColor: [3, 105, 161] },
+        2: { fillColor: [220, 252, 231], textColor: [22, 101, 52] },
+        3: { fillColor: [254, 226, 226], textColor: [153, 27, 27], halign: "center" },
+      },
+      didParseCell: (data) => {
+        // Color status column based on match status
+        if (data.column.index === 3 && data.section === "body") {
+          const status = data.cell.raw?.toLowerCase() || "";
+          if (status === "match") {
+            data.cell.styles.fillColor = [220, 252, 231];
+            data.cell.styles.textColor = [22, 101, 52];
+          } else {
+            data.cell.styles.fillColor = [254, 226, 226];
+            data.cell.styles.textColor = [153, 27, 27];
+          }
+        }
       },
     });
 
