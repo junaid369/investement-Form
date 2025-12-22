@@ -1271,7 +1271,7 @@ app.patch("/api/submissions/:id/field-verifications", async (req, res) => {
 // Mark certificate as generated and upload to S3
 app.post("/api/submissions/:id/generate-certificate", async (req, res) => {
   try {
-    const { verifiedBy } = req.body;
+    const { verifiedBy, erpData } = req.body;
     const submission = await InvestorForm.findById(req.params.id);
 
     if (!submission) {
@@ -1290,9 +1290,14 @@ app.post("/api/submissions/:id/generate-certificate", async (req, res) => {
     submission.verifiedBy = verifiedBy || "System";
     submission.certificateGeneratedAt = new Date();
 
-    // Generate PDF
+    // Store ERP dividend history in submission for future reference (optional)
+    if (erpData?.dividendHistory) {
+      submission.erpDividendHistory = erpData.dividendHistory;
+    }
+
+    // Generate PDF with ERP data (includes dividend history)
     const { generateVerificationCertificate } = require("./utils/pdfGenerator");
-    const pdfBuffer = generateVerificationCertificate(submission);
+    const pdfBuffer = generateVerificationCertificate(submission, erpData);
 
     // Upload to S3
     const fileName = `certificates/${certNumber}_${submission.personalInfo?.fullName?.replace(/\s+/g, "_")}_${Date.now()}.pdf`;
