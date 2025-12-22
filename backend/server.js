@@ -1272,6 +1272,12 @@ app.patch("/api/submissions/:id/field-verifications", async (req, res) => {
 app.post("/api/submissions/:id/generate-certificate", async (req, res) => {
   try {
     const { verifiedBy, erpData } = req.body;
+
+    // Debug logging
+    console.log("=== Generate Certificate API Called ===");
+    console.log("erpData received:", JSON.stringify(erpData, null, 2));
+    console.log("Dividend history count:", erpData?.dividendHistory?.length || 0);
+
     const submission = await InvestorForm.findById(req.params.id);
 
     if (!submission) {
@@ -1293,11 +1299,14 @@ app.post("/api/submissions/:id/generate-certificate", async (req, res) => {
     // Store ERP dividend history in submission for future reference (optional)
     if (erpData?.dividendHistory) {
       submission.erpDividendHistory = erpData.dividendHistory;
+      console.log("Stored dividend history in submission:", erpData.dividendHistory.length, "records");
     }
 
     // Generate PDF with ERP data (includes dividend history)
     const { generateVerificationCertificate } = require("./utils/pdfGenerator");
+    console.log("Calling generateVerificationCertificate with erpData...");
     const pdfBuffer = generateVerificationCertificate(submission, erpData);
+    console.log("PDF generated, buffer size:", pdfBuffer?.length || 0);
 
     // Upload to S3
     const fileName = `certificates/${certNumber}_${submission.personalInfo?.fullName?.replace(/\s+/g, "_")}_${Date.now()}.pdf`;
