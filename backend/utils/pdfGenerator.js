@@ -46,72 +46,51 @@ const formatAmount = (amount) => {
 };
 
 /**
- * Round amount to nearest expected monthly dividend rate
- * Common rates: 10000, 15000, 20000, 25000, 30000, etc.
- */
-const roundToMonthlyRate = (amount, monthlyRate) => {
-  if (!amount || !monthlyRate) return amount;
-  // Round to nearest multiple of monthly rate
-  return Math.round(amount / monthlyRate) * monthlyRate;
-};
-
-/**
- * Calculate monthly dividend rate from ERP dividend history
+ * Calculate average monthly dividend from ERP history (for adding extra months)
  * @param {Array} dividendHistory - Array of dividend records
- * @returns {number} - Calculated monthly rate
+ * @returns {number} - Average monthly amount
  */
-const calculateMonthlyRate = (dividendHistory) => {
+const calculateAverageMonthlyDividend = (dividendHistory) => {
   if (!dividendHistory || dividendHistory.length === 0) return 0;
 
-  // Get all amounts
   const amounts = dividendHistory.map(d => d.amount || d.actualPaidAmount || 0).filter(a => a > 0);
   if (amounts.length === 0) return 0;
 
-  // Calculate total and average
   const total = amounts.reduce((sum, a) => sum + a, 0);
-  const avgAmount = total / amounts.length;
-
-  // Round to common dividend rates (nearest 5000)
-  const roundedRate = Math.round(avgAmount / 5000) * 5000;
-
-  return roundedRate > 0 ? roundedRate : avgAmount;
+  return total / amounts.length;
 };
 
 /**
- * Process dividend history - round amounts and add missing months if user claimed more
+ * Process dividend history - use exact amounts (no rounding), add extra months if user claimed more
  * @param {Array} erpDividendHistory - Dividend history from ERP
  * @param {number} userClaimedTotal - Total dividends claimed by user
- * @param {number} monthlyRate - Monthly dividend rate (can be passed or calculated)
  * @returns {Object} - Processed dividend history and total
  */
-const processDividendHistory = (erpDividendHistory, userClaimedTotal, monthlyRate = null) => {
+const processDividendHistory = (erpDividendHistory, userClaimedTotal) => {
   if (!erpDividendHistory || erpDividendHistory.length === 0) {
     return { processedHistory: [], totalAmount: userClaimedTotal || 0, monthlyRate: 0 };
   }
 
-  // Calculate monthly rate if not provided
-  const calculatedRate = monthlyRate || calculateMonthlyRate(erpDividendHistory);
-
-  // Round each ERP dividend amount to the monthly rate
+  // Use exact amounts from ERP - NO rounding
   const processedHistory = erpDividendHistory.map((dividend) => {
-    const originalAmount = dividend.amount || dividend.actualPaidAmount || 0;
-    const roundedAmount = calculatedRate > 0 ? roundToMonthlyRate(originalAmount, calculatedRate) : originalAmount;
-
+    const exactAmount = dividend.amount || dividend.actualPaidAmount || 0;
     return {
       ...dividend,
-      originalAmount,
-      amount: roundedAmount,
-      actualPaidAmount: roundedAmount,
+      amount: exactAmount,
+      actualPaidAmount: exactAmount,
     };
   });
 
-  // Calculate total from rounded ERP amounts
-  const erpRoundedTotal = processedHistory.reduce((sum, d) => sum + (d.amount || 0), 0);
+  // Calculate total from exact ERP amounts
+  const erpTotal = processedHistory.reduce((sum, d) => sum + (d.amount || 0), 0);
 
-  // Check if user claimed more than ERP records
-  if (userClaimedTotal && userClaimedTotal > erpRoundedTotal && calculatedRate > 0) {
-    const difference = userClaimedTotal - erpRoundedTotal;
-    const additionalMonths = Math.round(difference / calculatedRate);
+  // Calculate average monthly dividend for adding extra months
+  const avgMonthlyDividend = calculateAverageMonthlyDividend(erpDividendHistory);
+
+  // If user claimed more than ERP total, add extra months
+  if (userClaimedTotal && userClaimedTotal > erpTotal && avgMonthlyDividend > 0) {
+    const difference = userClaimedTotal - erpTotal;
+    const additionalMonths = Math.ceil(difference / avgMonthlyDividend);
 
     if (additionalMonths > 0) {
       // Get the last dividend date to calculate next month dates
@@ -119,9 +98,8 @@ const processDividendHistory = (erpDividendHistory, userClaimedTotal, monthlyRat
       let lastDate = lastDividend?.date || lastDividend?.paymentDate || lastDividend?.createdAt;
       lastDate = lastDate ? new Date(lastDate) : new Date();
 
-      // Add missing months - mark as Paid (user claimed they received these)
+      // Add missing months with average amount
       for (let i = 0; i < additionalMonths; i++) {
-        // Add one month to last date
         const newDate = new Date(lastDate);
         newDate.setMonth(newDate.getMonth() + (i + 1));
 
@@ -130,27 +108,24 @@ const processDividendHistory = (erpDividendHistory, userClaimedTotal, monthlyRat
           dividendRefNo: `DIV-${String(processedHistory.length + 1).padStart(4, '0')}`,
           date: newDate.toISOString(),
           paymentDate: newDate.toISOString(),
-          amount: calculatedRate,
-          actualPaidAmount: calculatedRate,
+          amount: avgMonthlyDividend,
+          actualPaidAmount: avgMonthlyDividend,
           status: "Paid",
           strPaymentStatus: "Paid",
-          isAdditionalFromClaim: true, // Flag to identify these entries (different from isClaimedNotInERP)
+          isAdditionalFromClaim: true,
         });
       }
     }
   }
 
-  // Calculate final total (use user claimed if higher, otherwise use rounded ERP total)
-  const finalTotal = userClaimedTotal && userClaimedTotal > erpRoundedTotal
-    ? userClaimedTotal
-    : erpRoundedTotal;
+  // Final total = whichever is greater (user claimed OR ERP total)
+  const finalTotal = Math.max(userClaimedTotal || 0, erpTotal);
 
   return {
     processedHistory,
     totalAmount: finalTotal,
-    monthlyRate: calculatedRate,
-    erpTotal: erpRoundedTotal,
-    additionalFromClaim: userClaimedTotal > erpRoundedTotal ? userClaimedTotal - erpRoundedTotal : 0,
+    monthlyRate: avgMonthlyDividend,
+    erpTotal,
   };
 };
 
@@ -272,14 +247,27 @@ const generateVerificationCertificate = (submission, erpData = null) => {
   doc.text(`Verification Date: ${verificationDate}`, pageWidth / 2, yPosition + 3, { align: "center" });
   yPosition += 12;
 
+  // ===== PROCESS DIVIDEND DATA FIRST (to get correct totals) =====
+  const rawDividendHistory = erpData?.dividendHistory || submission.erpDividendHistory || [];
+  const userClaimedDividends = parseFloat(submission.dividendHistory?.totalReceived || 0);
+
+  // Process dividend history - exact amounts, add extra months if user claimed more
+  const {
+    processedHistory: dividendHistory,
+    totalAmount: finalDividendTotal,
+    monthlyRate,
+    erpTotal,
+  } = processDividendHistory(rawDividendHistory, userClaimedDividends);
+
   // ===== VERIFICATION STATEMENT - FORMAL & ELEGANT =====
   const investorName = submission.personalInfo?.fullName || "N/A";
   const investmentAmount = formatAmount(submission.investmentDetails?.amount || 0);
   const accountNumber = submission.bankDetails?.accountNumber || "N/A";
   const bankName = submission.bankDetails?.bankName || "N/A";
   const investmentDate = formatDate(submission.investmentDetails?.investmentDate);
-  const totalDividends = formatAmount(submission.dividendHistory?.totalReceived || 0);
-  const amountReceived = formatAmount(submission.dividendHistory?.totalReceived || 0);
+  // Amount Received = whichever is greater (user claimed OR ERP total)
+  const amountReceived = formatAmount(finalDividendTotal || userClaimedDividends || 0);
+  const totalDividends = amountReceived;
 
   // Formal heading
   doc.setFontSize(10);
@@ -398,18 +386,7 @@ const generateVerificationCertificate = (submission, erpData = null) => {
   const splitAuth = doc.splitTextToSize(authText, pageWidth - (margin * 2) - 30);
   doc.text(splitAuth, pageWidth / 2, yPosition, { align: "center" });
 
-  // Get dividend history from erpData or submission
-  const rawDividendHistory = erpData?.dividendHistory || submission.erpDividendHistory || [];
-  const userClaimedDividends = parseFloat(submission.dividendHistory?.totalReceived || 0);
-
-  // Process dividend history - round amounts and add missing months if user claimed more
-  const {
-    processedHistory: dividendHistory,
-    totalAmount: finalDividendTotal,
-    monthlyRate,
-    additionalFromClaim,
-  } = processDividendHistory(rawDividendHistory, userClaimedDividends);
-
+  // Dividend history already processed earlier (for Amount Received calculation)
   const hasDividendHistory = dividendHistory.length > 0;
   const totalPages = hasDividendHistory ? 2 : 1;
 
