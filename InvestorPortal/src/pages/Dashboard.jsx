@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiFileText, FiClock, FiCheckCircle, FiXCircle, FiPlus, FiSearch, FiEye, FiEdit2, FiTrash2, FiAlertCircle, FiAward, FiAlertTriangle } from 'react-icons/fi';
+import { FiFileText, FiClock, FiCheckCircle, FiXCircle, FiPlus, FiSearch, FiEye, FiEdit2, FiTrash2, FiAlertCircle, FiAward, FiAlertTriangle, FiClipboard } from 'react-icons/fi';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { submissionAPI } from '../services/api';
+import ConsentModal from '../components/ConsentModal';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -20,6 +21,10 @@ const Dashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+
+  // Consent modal state
+  const [consentModalOpen, setConsentModalOpen] = useState(false);
+  const [selectedSubmission, setSelectedSubmission] = useState(null);
 
   useEffect(() => {
     fetchSubmissions();
@@ -83,6 +88,55 @@ const Dashboard = () => {
   const formatAmount = (amount) => {
     if (!amount) return '0';
     return Number(amount).toLocaleString();
+  };
+
+  const handleConsentClick = (submission, e) => {
+    e.stopPropagation();
+    setSelectedSubmission(submission);
+    setConsentModalOpen(true);
+  };
+
+  const handleConsentUpdate = (updatedSubmission) => {
+    setSubmissions(prev =>
+      prev.map(s => s._id === updatedSubmission._id ? updatedSubmission : s)
+    );
+  };
+
+  const getConsentStatusBadge = (submission) => {
+    if (submission.status !== 'verified') return null;
+
+    const consentStatus = submission.consent?.status || 'not_required';
+
+    switch (consentStatus) {
+      case 'pending':
+        return (
+          <button
+            className="consent-btn-table pending"
+            onClick={(e) => handleConsentClick(submission, e)}
+            title="Download & Sign Consent"
+          >
+            <FiClipboard /> Sign
+          </button>
+        );
+      case 'investor_signed':
+        return (
+          <span className="consent-badge awaiting">
+            Pending Co.
+          </span>
+        );
+      case 'fully_executed':
+        return (
+          <button
+            className="consent-btn-table completed"
+            onClick={(e) => handleConsentClick(submission, e)}
+            title="View Consent Document"
+          >
+            <FiCheckCircle /> View
+          </button>
+        );
+      default:
+        return <span className="consent-badge na">-</span>;
+    }
   };
 
   return (
@@ -210,6 +264,7 @@ const Dashboard = () => {
                     <th>Amount (AED)</th>
                     <th>Data Match</th>
                     <th>Status</th>
+                    <th>Consent</th>
                     <th>Submitted</th>
                     <th>Actions</th>
                   </tr>
@@ -244,6 +299,9 @@ const Dashboard = () => {
                             ? `Draft (${item.completedSections?.length || 0}/7)`
                             : item.status}
                         </span>
+                      </td>
+                      <td>
+                        {getConsentStatusBadge(item)}
                       </td>
                       <td>{formatDate(item.submittedAt || item.createdAt)}</td>
                       <td>
@@ -357,6 +415,17 @@ const Dashboard = () => {
       </main>
 
       <Footer />
+
+      {/* Consent Modal */}
+      <ConsentModal
+        isOpen={consentModalOpen}
+        onClose={() => {
+          setConsentModalOpen(false);
+          setSelectedSubmission(null);
+        }}
+        submission={selectedSubmission}
+        onConsentUpdate={handleConsentUpdate}
+      />
     </div>
   );
 };

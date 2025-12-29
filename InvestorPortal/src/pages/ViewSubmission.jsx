@@ -1,15 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FiArrowLeft, FiDownload, FiEdit2, FiExternalLink } from 'react-icons/fi';
+import { FiArrowLeft, FiDownload, FiEdit2, FiExternalLink, FiClipboard, FiUpload, FiCheck, FiClock } from 'react-icons/fi';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { submissionAPI } from '../services/api';
+import ConsentModal from '../components/ConsentModal';
 
 const ViewSubmission = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const [submission, setSubmission] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [consentModalOpen, setConsentModalOpen] = useState(false);
 
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
@@ -348,6 +350,10 @@ const ViewSubmission = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleConsentUpdate = (updatedSubmission) => {
+    setSubmission(updatedSubmission);
   };
 
   if (loading) {
@@ -710,6 +716,132 @@ const ViewSubmission = () => {
             </div>
           )}
 
+          {/* Consent Section - Only show for verified submissions with consent */}
+          {status === 'verified' && submission.consent && submission.consent.status !== 'not_required' && (
+            <div style={{
+              background: submission.consent.status === 'fully_executed' ? '#ECFDF5' :
+                          submission.consent.status === 'investor_signed' ? '#EFF6FF' : '#FFFBEB',
+              border: `2px solid ${submission.consent.status === 'fully_executed' ? '#10B981' :
+                       submission.consent.status === 'investor_signed' ? '#3B82F6' : '#F59E0B'}`,
+              borderRadius: '8px',
+              padding: '20px',
+              margin: '20px 30px',
+            }}>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', marginBottom: '16px' }}>
+                {submission.consent.status === 'fully_executed' ? (
+                  <FiCheck style={{ fontSize: '28px', color: '#10B981', flexShrink: 0 }} />
+                ) : submission.consent.status === 'investor_signed' ? (
+                  <FiClock style={{ fontSize: '28px', color: '#3B82F6', flexShrink: 0 }} />
+                ) : (
+                  <FiClipboard style={{ fontSize: '28px', color: '#F59E0B', flexShrink: 0 }} />
+                )}
+                <div style={{ flex: 1 }}>
+                  <h4 style={{
+                    color: submission.consent.status === 'fully_executed' ? '#065F46' :
+                           submission.consent.status === 'investor_signed' ? '#1E40AF' : '#92400E',
+                    fontWeight: '700',
+                    marginBottom: '4px',
+                    fontSize: '1.1rem'
+                  }}>
+                    {submission.consent.status === 'fully_executed' ? 'Consent Completed' :
+                     submission.consent.status === 'investor_signed' ? 'Awaiting Company Signature' :
+                     'Consent Required'}
+                  </h4>
+                  <p style={{
+                    color: submission.consent.status === 'fully_executed' ? '#047857' :
+                           submission.consent.status === 'investor_signed' ? '#2563EB' : '#B45309',
+                    fontSize: '0.9rem'
+                  }}>
+                    {submission.consent.status === 'fully_executed' ?
+                      'Both you and the company have signed the consent document. You can download the fully executed copy below.' :
+                     submission.consent.status === 'investor_signed' ?
+                      'Thank you for signing! The company is now reviewing and will add their authorization.' :
+                      'Please download, sign, and upload the consent document to proceed with your investment closure.'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Consent Info */}
+              {submission.consent.consentNumber && (
+                <div style={{
+                  background: 'rgba(255,255,255,0.7)',
+                  borderRadius: '6px',
+                  padding: '12px',
+                  marginBottom: '16px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '10px'
+                }}>
+                  <div>
+                    <span style={{ fontSize: '0.75rem', color: '#6B7280' }}>Reference No:</span>
+                    <p style={{ fontWeight: '600', fontSize: '0.9rem', color: '#111827', fontFamily: 'monospace' }}>
+                      {submission.consent.consentNumber}
+                    </p>
+                  </div>
+                  {submission.consent.investorSignedAt && (
+                    <div>
+                      <span style={{ fontSize: '0.75rem', color: '#6B7280' }}>You Signed On:</span>
+                      <p style={{ fontWeight: '600', fontSize: '0.9rem', color: '#111827' }}>
+                        {formatDate(submission.consent.investorSignedAt)}
+                      </p>
+                    </div>
+                  )}
+                  {submission.consent.companySignedAt && (
+                    <div>
+                      <span style={{ fontSize: '0.75rem', color: '#6B7280' }}>Company Signed On:</span>
+                      <p style={{ fontWeight: '600', fontSize: '0.9rem', color: '#111827' }}>
+                        {formatDate(submission.consent.companySignedAt)}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Action Button */}
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <button
+                  onClick={() => setConsentModalOpen(true)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '12px 24px',
+                    background: submission.consent.status === 'fully_executed' ?
+                      'linear-gradient(135deg, #10B981 0%, #059669 100%)' :
+                      submission.consent.status === 'investor_signed' ?
+                      'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)' :
+                      'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '0.95rem',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+                  }}
+                >
+                  {submission.consent.status === 'pending' ? (
+                    <><FiUpload /> Download & Sign Consent</>
+                  ) : submission.consent.status === 'investor_signed' ? (
+                    <><FiClock /> View Consent Status</>
+                  ) : (
+                    <><FiDownload /> Download Final Consent</>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+
           <div style={{ padding: '30px' }}>
             {/* Personal Information */}
             <div style={{ marginBottom: '40px' }}>
@@ -1011,6 +1143,14 @@ const ViewSubmission = () => {
       </main>
 
       <Footer />
+
+      {/* Consent Modal */}
+      <ConsentModal
+        isOpen={consentModalOpen}
+        onClose={() => setConsentModalOpen(false)}
+        submission={submission}
+        onConsentUpdate={handleConsentUpdate}
+      />
     </div>
   );
 };

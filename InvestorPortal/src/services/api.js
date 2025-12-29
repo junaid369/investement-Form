@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// const API_URL = 'https://investmentapis.dailyneeds.ai';
-const API_URL = 'http://localhost:5050';
+ const API_URL = 'https://investmentapis.dailyneeds.ai';
+//const API_URL = 'http://localhost:5050';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -52,6 +52,27 @@ export const submissionAPI = {
   submitForm: (formData) => api.post('/api/user/submit', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
+};
+
+// Consent APIs
+export const consentAPI = {
+  // Get consent status for a submission
+  getStatus: (id) => api.get(`/api/submissions/${id}/consent`),
+
+  // Upload investor signed consent PDF
+  uploadInvestorSigned: (id, formData) => api.post(`/api/submissions/${id}/consent/investor-upload`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
+
+  // Download consent PDF (returns URL from submission data)
+  getConsentPdfUrl: (submission) => {
+    if (!submission?.consent) return null;
+    const { status, blankPdfUrl, investorSignedPdfUrl, fullyExecutedPdfUrl } = submission.consent;
+    if (status === 'fully_executed' && fullyExecutedPdfUrl) return fullyExecutedPdfUrl;
+    if (status === 'investor_signed' && investorSignedPdfUrl) return investorSignedPdfUrl;
+    if (blankPdfUrl) return blankPdfUrl;
+    return null;
+  },
 };
 
 export default api;

@@ -233,6 +233,24 @@ const investorFormSchema = new mongoose.Schema(
     totalFieldsCount: { type: Number, default: 16 }, // Total verifiable fields (7 personal + 5 bank + 4 investment)
     lastVerificationUpdate: { type: Date }, // When field verifications were last updated
     verificationCompletedBy: { type: String }, // Admin who completed the verification
+
+    // Consent workflow fields
+    consent: {
+      status: {
+        type: String,
+        enum: ['not_required', 'pending', 'investor_signed', 'fully_executed'],
+        default: 'not_required'
+      },
+      consentNumber: { type: String }, // CONSENT-XXXXXXXX
+      blankPdfUrl: { type: String }, // Original blank consent PDF
+      investorSignedPdfUrl: { type: String }, // After investor signs & uploads
+      fullyExecutedPdfUrl: { type: String }, // After company signs & uploads
+      generatedAt: { type: Date }, // When blank PDF was generated
+      investorSignedAt: { type: Date }, // When investor uploaded signed copy
+      companySignedAt: { type: Date }, // When company uploaded fully executed copy
+      investorSignedBy: { type: String }, // Investor name who signed
+      companySignedBy: { type: String }, // Admin who signed for company
+    },
   },
   { timestamps: true }
 );
@@ -1063,6 +1081,7 @@ app.get("/api/submissions", async (req, res) => {
       limit,
       search = "",
       status = "",
+      consentStatus = "",
       sortBy = "createdAt",
       sortOrder = "desc",
     } = req.query;
@@ -1093,6 +1112,23 @@ app.get("/api/submissions", async (req, res) => {
     } else {
       // Don't show drafts in admin panel by default
       query.status = { $ne: "draft" };
+    }
+
+    // Consent status filter (only applies when status is verified)
+    if (consentStatus && status === "verified") {
+      if (consentStatus === "not_required") {
+        // Not generated - either no consent field or status is not_required
+        query.$and = query.$and || [];
+        query.$and.push({
+          $or: [
+            { "consent.status": { $exists: false } },
+            { "consent.status": null },
+            { "consent.status": "not_required" }
+          ]
+        });
+      } else {
+        query["consent.status"] = consentStatus;
+      }
     }
 
     // Sort
@@ -1415,6 +1451,222 @@ app.get("/api/user/:userId/certificates", async (req, res) => {
     }).sort({ certificateGeneratedAt: -1 });
 
     res.json({ success: true, data: submissions });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ============================================
+// CONSENT WORKFLOW ENDPOINTS
+// ============================================
+
+// Generate consent PDF (called after verification - by admin)
+app.post("/api/submissions/:id/generate-consent-pdf", async (req, res) => {
+  try {
+    const submission = await InvestorForm.findById(req.params.id);
+
+    if (!submission) {
+      return res.status(404).json({ success: false, message: "Submission not found" });
+    }
+
+    if (submission.status !== "verified") {
+      return res.status(400).json({ success: false, message: "Only verified submissions can have consent generated" });
+    }
+
+    // Generate consent number
+    const consentNumber = `CONSENT-${submission._id.toString().slice(-8).toUpperCase()}`;
+
+    // Generate consent PDF
+    const { generateConsentPdf } = require("./utils/consentPdfGenerator");
+    const pdfBuffer = generateConsentPdf(submission);
+
+    // Upload to S3
+    const fileName = `consent-documents/${consentNumber}_${submission.personalInfo?.fullName?.replace(/\s+/g, "_")}_blank_${Date.now()}.pdf`;
+    const uploadParams = {
+      Bucket: BUCKET_NAME,
+      Key: fileName,
+      Body: pdfBuffer,
+      ContentType: "application/pdf",
+    };
+
+    const command = new PutObjectCommand(uploadParams);
+    await s3Client.send(command);
+
+    // Construct S3 URL
+    const s3Url = CLOUDFRONT_URL
+      ? `${CLOUDFRONT_URL}/${fileName}`
+      : `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
+
+    // Update submission with consent info
+    const updatedSubmission = await InvestorForm.findByIdAndUpdate(
+      req.params.id,
+      {
+        "consent.status": "pending",
+        "consent.consentNumber": consentNumber,
+        "consent.blankPdfUrl": s3Url,
+        "consent.generatedAt": new Date(),
+      },
+      { new: true }
+    );
+
+    res.json({ success: true, data: updatedSubmission });
+  } catch (error) {
+    console.error("Consent PDF generation error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Get consent status for a submission
+app.get("/api/submissions/:id/consent", async (req, res) => {
+  try {
+    const submission = await InvestorForm.findById(req.params.id).select("consent personalInfo courtAgreementNumber");
+
+    if (!submission) {
+      return res.status(404).json({ success: false, message: "Submission not found" });
+    }
+
+    res.json({ success: true, data: submission.consent || { status: "not_required" } });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Upload investor signed consent PDF
+app.post("/api/submissions/:id/consent/investor-upload", upload.single("consentPdf"), async (req, res) => {
+  try {
+    const submission = await InvestorForm.findById(req.params.id);
+
+    if (!submission) {
+      return res.status(404).json({ success: false, message: "Submission not found" });
+    }
+
+    if (!submission.consent || submission.consent.status !== "pending") {
+      return res.status(400).json({ success: false, message: "Consent is not in pending state" });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "No file uploaded" });
+    }
+
+    // Upload to S3
+    const consentNumber = submission.consent.consentNumber;
+    const fileName = `consent-documents/${consentNumber}_${submission.personalInfo?.fullName?.replace(/\s+/g, "_")}_investor_signed_${Date.now()}.pdf`;
+    const uploadParams = {
+      Bucket: BUCKET_NAME,
+      Key: fileName,
+      Body: req.file.buffer,
+      ContentType: "application/pdf",
+    };
+
+    const command = new PutObjectCommand(uploadParams);
+    await s3Client.send(command);
+
+    // Construct S3 URL
+    const s3Url = CLOUDFRONT_URL
+      ? `${CLOUDFRONT_URL}/${fileName}`
+      : `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
+
+    // Update submission
+    const updatedSubmission = await InvestorForm.findByIdAndUpdate(
+      req.params.id,
+      {
+        "consent.status": "investor_signed",
+        "consent.investorSignedPdfUrl": s3Url,
+        "consent.investorSignedAt": new Date(),
+        "consent.investorSignedBy": submission.personalInfo?.fullName || "Investor",
+      },
+      { new: true }
+    );
+
+    res.json({ success: true, data: updatedSubmission });
+  } catch (error) {
+    console.error("Investor consent upload error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Upload company signed (fully executed) consent PDF - Admin only
+app.post("/api/submissions/:id/consent/company-upload", upload.single("consentPdf"), async (req, res) => {
+  try {
+    const { signedBy } = req.body;
+    const submission = await InvestorForm.findById(req.params.id);
+
+    if (!submission) {
+      return res.status(404).json({ success: false, message: "Submission not found" });
+    }
+
+    if (!submission.consent || submission.consent.status !== "investor_signed") {
+      return res.status(400).json({ success: false, message: "Investor must sign first before company can sign" });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "No file uploaded" });
+    }
+
+    // Upload to S3
+    const consentNumber = submission.consent.consentNumber;
+    const fileName = `consent-documents/${consentNumber}_${submission.personalInfo?.fullName?.replace(/\s+/g, "_")}_fully_executed_${Date.now()}.pdf`;
+    const uploadParams = {
+      Bucket: BUCKET_NAME,
+      Key: fileName,
+      Body: req.file.buffer,
+      ContentType: "application/pdf",
+    };
+
+    const command = new PutObjectCommand(uploadParams);
+    await s3Client.send(command);
+
+    // Construct S3 URL
+    const s3Url = CLOUDFRONT_URL
+      ? `${CLOUDFRONT_URL}/${fileName}`
+      : `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
+
+    // Update submission
+    const updatedSubmission = await InvestorForm.findByIdAndUpdate(
+      req.params.id,
+      {
+        "consent.status": "fully_executed",
+        "consent.fullyExecutedPdfUrl": s3Url,
+        "consent.companySignedAt": new Date(),
+        "consent.companySignedBy": signedBy || "Admin",
+      },
+      { new: true }
+    );
+
+    res.json({ success: true, data: updatedSubmission });
+  } catch (error) {
+    console.error("Company consent upload error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Get all submissions with consent status (for admin panel)
+app.get("/api/admin/consent-submissions", async (req, res) => {
+  try {
+    const { status, page = 1, limit = 20 } = req.query;
+    const skip = (page - 1) * limit;
+
+    let query = { status: "verified" };
+
+    if (status && status !== "all") {
+      query["consent.status"] = status;
+    }
+
+    const submissions = await InvestorForm.find(query)
+      .select("personalInfo courtAgreementNumber investmentDetails consent status certificateNumber createdAt")
+      .sort({ "consent.generatedAt": -1, createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await InvestorForm.countDocuments(query);
+
+    res.json({
+      success: true,
+      data: submissions,
+      total,
+      page: parseInt(page),
+      totalPages: Math.ceil(total / limit),
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
