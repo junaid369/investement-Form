@@ -162,10 +162,27 @@ const generateConsentPdf = (submission) => {
   doc.line(margin, yPosition + 2, margin + 55, yPosition + 2);
   yPosition += 6;
 
+  // Handle phone number display - if both phoneCode and phone exist, combine them
+  // If only phone exists (already contains country code), use it directly
+  let phoneDisplay = "N/A";
+  const phoneCode = submission.personalInfo?.phoneCode;
+  const phoneNumber = submission.personalInfo?.phone;
+
+  if (phoneCode && phoneNumber) {
+    // Both exist - phoneNumber already contains country code, use it directly
+    phoneDisplay = phoneNumber;
+  } else if (phoneNumber) {
+    // Only phone exists (already contains country code)
+    phoneDisplay = phoneNumber;
+  } else if (phoneCode) {
+    // Only phoneCode exists - this shouldn't display as valid phone
+    phoneDisplay = "N/A";
+  }
+
   const investorData = [
     ["Full Name", submission.personalInfo?.fullName || "N/A"],
     ["Email Address", submission.personalInfo?.email || "N/A"],
-    ["Phone Number", `${submission.personalInfo?.phoneCode || ""} ${submission.personalInfo?.phone || "N/A"}`],
+    ["Phone Number", phoneDisplay],
     ["Country", submission.personalInfo?.country || "N/A"],
     ["Address", `${submission.personalInfo?.address || "N/A"}, ${submission.personalInfo?.city || ""}`],
   ];
@@ -324,16 +341,16 @@ const generateConsentPdf = (submission) => {
   doc.setFont("helvetica", "normal");
   doc.setTextColor(50, 50, 50);
 
-  const declaration = "I, the undersigned, confirm that I have read and understood the above details and terms. I hereby provide my consent for the verification and processing of my investment closure request.";
+  const declaration = "I confirm that I have read and understood the above details and provide my consent for the verification and processing of my investment closure request through the legal process. I confirm that until 5 November 2025, the company was operating normally and my investment was running without issue. Due to the subsequent administrative action, operations were affected, and I am now requesting the lawful return of my invested amount, which represents my personal savings. I confirm that all information submitted is true and accurate and request the authorities to consider this submission for legal settlement.";
   const splitDeclaration = doc.splitTextToSize(declaration, contentWidth);
   doc.text(splitDeclaration, margin, yPosition);
-  yPosition += splitDeclaration.length * 5 + 12;
+  yPosition += splitDeclaration.length * 4 + 8;
 
   // Investor signature box
   doc.setDrawColor(...COLORS.gold);
   doc.setLineWidth(1);
   doc.setFillColor(255, 255, 255);
-  doc.roundedRect(margin, yPosition, contentWidth, 50, 3, 3, "FD");
+  doc.roundedRect(margin, yPosition, contentWidth, 62, 3, 3, "FD");
 
   // Inner content
   const boxLeft = margin + 10;
@@ -350,7 +367,17 @@ const generateConsentPdf = (submission) => {
   doc.setTextColor(...COLORS.black);
   doc.text(submission.personalInfo?.fullName || "___________________________", boxLeft + 32, yPosition);
 
-  yPosition += 16;
+  yPosition += 12;
+
+  // Passport Number line
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...COLORS.darkGray);
+  doc.text("Passport No:", boxLeft, yPosition);
+  doc.setDrawColor(...COLORS.darkGray);
+  doc.setLineWidth(0.4);
+  doc.line(boxLeft + 28, yPosition, boxLeft + 80, yPosition);
+
+  yPosition += 14;
 
   // Signature line
   doc.setDrawColor(...COLORS.darkGray);
